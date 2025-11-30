@@ -30,20 +30,35 @@ public class RestaurantDataHandler implements HttpHandler {
 
         // Get by ID
         if (path.matches("/data/restaurants/\\d+")) {
-            long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
-            RestaurantDTO dto = repository.findById(id);
+            try {
+                long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+                RestaurantDTO dto = repository.findById(id);
 
-            if (dto == null) {
-                send(exchange, 404, "{\"error\":\"Restaurant not found\"}");
-                return;
+                if (dto == null) {
+                    send(exchange, 404, "{\"error\":\"Restaurant not found\"}");
+                    return;
+                }
+
+                send(exchange, 200, mapper.writeValueAsString(dto));
+
+            } catch (NumberFormatException e) {
+                //  ID invalide → 404
+                send(exchange, 404, "{\"error\":\"Invalid restaurant ID format\"}");
+            } catch (Exception e) {
+                // Autre erreur → 500
+                e.printStackTrace();
+                send(exchange, 500, "{\"error\":\"Internal server error\"}");
             }
-
-            send(exchange, 200, mapper.writeValueAsString(dto));
             return;
         }
 
         // Get all
-        send(exchange, 200, mapper.writeValueAsString(repository.findAll()));
+        try {
+            send(exchange, 200, mapper.writeValueAsString(repository.findAll()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            send(exchange, 500, "{\"error\":\"Internal server error\"}");
+        }
     }
 
     private void send(HttpExchange ex, int code, String body) throws IOException {

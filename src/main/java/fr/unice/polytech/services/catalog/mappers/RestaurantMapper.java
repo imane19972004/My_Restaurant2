@@ -3,14 +3,17 @@ package fr.unice.polytech.services.catalog.mappers;
 import fr.unice.polytech.api.dto.DishDTO;
 import fr.unice.polytech.api.dto.OpeningHoursDTO;
 import fr.unice.polytech.api.dto.RestaurantDTO;
+import fr.unice.polytech.api.dto.ToppingDTO;
 import fr.unice.polytech.dishes.Dish;
 import fr.unice.polytech.dishes.DishCategory;
 import fr.unice.polytech.dishes.DishType;
+import fr.unice.polytech.dishes.Topping;
 import fr.unice.polytech.restaurants.OpeningHours;
 import fr.unice.polytech.restaurants.Restaurant;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +47,16 @@ public class RestaurantMapper {
         dto.setPrice(dish.getPrice());
         dto.setCategory(dish.getCategory() != null ? dish.getCategory().toString() : null);
         dto.setDishType(dish.getCuisineType() != null ? dish.getCuisineType().toString() : "GENERAL");
+
+        // ✅ FIX 3 : Gérer les toppings
+        if (dish.getToppings() != null && !dish.getToppings().isEmpty()) {
+            List<ToppingDTO> toppingDTOs = dish.getToppings().stream()
+                    .map(t -> new ToppingDTO(t.getName(), t.getPrice()))
+                    .collect(Collectors.toList());
+            dto.setToppings(toppingDTOs);
+        } else {
+            dto.setToppings(new ArrayList<>());
+        }
         return dto;
     }
     
@@ -67,7 +80,7 @@ public class RestaurantMapper {
             dto.getDishes().forEach(dishDTO -> {
                 restaurant.addDish(
                         dishDTO.getName(),
-                        dishDTO.getDescription(),
+                        dishDTO.getDescription() != null ? dishDTO.getDescription() : "",
                         dishDTO.getPrice()
                 );
                 
@@ -77,6 +90,13 @@ public class RestaurantMapper {
                         Dish lastDish = restaurant.getDishes().get(restaurant.getDishes().size() - 1);
                         DishCategory category = DishCategory.valueOf(dishDTO.getCategory());
                         lastDish.setCategory(category);
+                        // FIX 5 : Ajouter les toppings
+                        if (dishDTO.getToppings() != null) {
+                            dishDTO.getToppings().forEach(toppingDTO -> {
+                                Topping topping = new Topping(toppingDTO.getName(), toppingDTO.getPrice());
+                                lastDish.addTopping(topping);
+                            });
+                        }
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("Invalid category: " + dishDTO.getCategory());
                     }
@@ -86,9 +106,13 @@ public class RestaurantMapper {
 
         // Ajouter les créneaux d'ouverture
         if (dto.getOpeningHours() != null) {
-            dto.getOpeningHours().forEach(slotDTO ->
-                    restaurant.addOpeningHours(dtoToOpeningHours(slotDTO))
-            );
+            dto.getOpeningHours().forEach(slotDTO -> {
+                try {
+                    restaurant.addOpeningHours(dtoToOpeningHours(slotDTO));
+                } catch (Exception e) {
+                    System.err.println("Invalid opening hours: " + e.getMessage());
+                }
+            });
         }
 
         return restaurant;

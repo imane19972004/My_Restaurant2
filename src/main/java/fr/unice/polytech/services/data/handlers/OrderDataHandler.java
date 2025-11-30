@@ -23,6 +23,7 @@ public class OrderDataHandler implements HttpHandler {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
 
+        // ✅ GET /data/orders/{id}
         if (method.equals("GET")) {
 
             if (path.matches("/data/orders/\\d+")) {
@@ -42,6 +43,13 @@ public class OrderDataHandler implements HttpHandler {
             return;
         }
 
+        // GET /data/orders (all)
+        if (method.equals("GET")) {
+            send(exchange, 200, mapper.writeValueAsString(repository.findAll()));
+            return;
+        }
+
+        //  POST /data/orders (create)
         if (method.equals("POST")) {
             OrderDTO dto = mapper.readValue(exchange.getRequestBody(), OrderDTO.class);
             dto = repository.save(dto);
@@ -49,6 +57,23 @@ public class OrderDataHandler implements HttpHandler {
             send(exchange, 201, mapper.writeValueAsString(dto));
             return;
         }
+        // FIX : PUT /data/orders/{id} (update)
+        if (method.equals("PUT") && path.matches("/data/orders/\\d+")) {
+            long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+
+            OrderDTO dto = mapper.readValue(exchange.getRequestBody(), OrderDTO.class);
+            dto.setId(id); // Forcer l'ID depuis l'URL
+
+            OrderDTO updated = repository.update(dto);
+
+            if (updated == null) {
+                send(exchange, 404, "{\"error\":\"Order not found\"}");
+                return;
+            }
+            send(exchange, 200, mapper.writeValueAsString(updated));
+            return;
+        }
+
 
         send(exchange, 405, "{\"error\":\"Method not allowed\"}");
     }
