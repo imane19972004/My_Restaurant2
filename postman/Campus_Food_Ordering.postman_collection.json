@@ -1,0 +1,493 @@
+{
+  "info": {
+    "name": "Campus Food Ordering API",
+    "description": "Complete test collection for restaurant ordering system with filters, categories, and payment flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "catalog_url",
+      "value": "http://localhost:8081",
+      "type": "string"
+    },
+    {
+      "key": "order_url",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "data_url",
+      "value": "http://localhost:8090",
+      "type": "string"
+    },
+    {
+      "key": "restaurant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Catalog Service - Restaurants",
+      "item": [
+        {
+          "name": "Get All Restaurants (Paginated)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test 1: Status Code",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test 2: Response Structure",
+                  "pm.test(\"Response has pagination structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('page');",
+                  "    pm.expect(jsonData).to.have.property('limit');",
+                  "    pm.expect(jsonData).to.have.property('totalItems');",
+                  "    pm.expect(jsonData).to.have.property('totalPages');",
+                  "});",
+                  "",
+                  "// Test 3: Data is Array",
+                  "pm.test(\"Data contains array of restaurants\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    pm.expect(jsonData.data.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "// Test 4: Restaurant Structure",
+                  "pm.test(\"Each restaurant has required fields\", function () {",
+                  "    const restaurants = pm.response.json().data;",
+                  "    restaurants.forEach(restaurant => {",
+                  "        pm.expect(restaurant).to.have.property('id');",
+                  "        pm.expect(restaurant).to.have.property('name');",
+                  "        pm.expect(restaurant).to.have.property('cuisineType');",
+                  "        pm.expect(restaurant).to.have.property('dishes');",
+                  "        pm.expect(restaurant.dishes).to.be.an('array');",
+                  "    });",
+                  "});",
+                  "",
+                  "// Test 5: Save first restaurant ID",
+                  "const restaurants = pm.response.json().data;",
+                  "if (restaurants.length > 0) {",
+                  "    pm.collectionVariables.set(\"restaurant_id\", restaurants[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"],
+              "query": [
+                {"key": "page", "value": "1"},
+                {"key": "limit", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter by Cuisine Type (ITALIAN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All restaurants have ITALIAN cuisine\", function () {",
+                  "    const restaurants = pm.response.json().data;",
+                  "    pm.expect(restaurants.length).to.be.above(0);",
+                  "    restaurants.forEach(restaurant => {",
+                  "        pm.expect(restaurant.cuisineType).to.equal('ITALIAN');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?cuisineType=ITALIAN",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"],
+              "query": [{"key": "cuisineType", "value": "ITALIAN"}]
+            }
+          }
+        },
+        {
+          "name": "Filter by Category (MAIN_COURSE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All restaurants have dishes with MAIN_COURSE category\", function () {",
+                  "    const restaurants = pm.response.json().data;",
+                  "    pm.expect(restaurants.length).to.be.above(0);",
+                  "    ",
+                  "    restaurants.forEach(restaurant => {",
+                  "        const hasMainCourse = restaurant.dishes.some(dish => ",
+                  "            dish.category === 'MAIN_COURSE'",
+                  "        );",
+                  "        pm.expect(hasMainCourse).to.be.true;",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?category=MAIN_COURSE",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"],
+              "query": [{"key": "category", "value": "MAIN_COURSE"}]
+            }
+          }
+        },
+        {
+          "name": "Filter by Availability (Open Now)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All restaurants are open\", function () {",
+                  "    const restaurants = pm.response.json().data;",
+                  "    restaurants.forEach(restaurant => {",
+                  "        pm.expect(restaurant.openingHours).to.be.an('array');",
+                  "        pm.expect(restaurant.openingHours.length).to.be.above(0);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants?availableNow=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants"],
+              "query": [{"key": "availableNow", "value": "true"}]
+            }
+          }
+        },
+        {
+          "name": "Get Restaurant by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Restaurant has complete structure\", function () {",
+                  "    const restaurant = pm.response.json();",
+                  "    pm.expect(restaurant).to.have.property('id');",
+                  "    pm.expect(restaurant).to.have.property('name');",
+                  "    pm.expect(restaurant).to.have.property('dishes');",
+                  "    pm.expect(restaurant).to.have.property('openingHours');",
+                  "});",
+                  "",
+                  "pm.test(\"Dishes have toppings structure\", function () {",
+                  "    const restaurant = pm.response.json();",
+                  "    restaurant.dishes.forEach(dish => {",
+                  "        pm.expect(dish).to.have.property('name');",
+                  "        pm.expect(dish).to.have.property('price');",
+                  "        pm.expect(dish).to.have.property('category');",
+                  "        if (dish.toppings) {",
+                  "            pm.expect(dish.toppings).to.be.an('array');",
+                  "            dish.toppings.forEach(topping => {",
+                  "                pm.expect(topping).to.have.property('name');",
+                  "                pm.expect(topping).to.have.property('price');",
+                  "            });",
+                  "        }",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"Opening hours are valid\", function () {",
+                  "    const restaurant = pm.response.json();",
+                  "    restaurant.openingHours.forEach(hours => {",
+                  "        pm.expect(hours).to.have.property('day');",
+                  "        pm.expect(hours).to.have.property('openingTime');",
+                  "        pm.expect(hours).to.have.property('closingTime');",
+                  "        ",
+                  "        // Validate day format",
+                  "        const validDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];",
+                  "        pm.expect(validDays).to.include(hours.day);",
+                  "        ",
+                  "        // Validate time format (HH:mm)",
+                  "        const timeRegex = /^\\d{2}:\\d{2}$/;",
+                  "        pm.expect(hours.openingTime).to.match(timeRegex);",
+                  "        pm.expect(hours.closingTime).to.match(timeRegex);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/{{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants", "{{restaurant_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Order Service - Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Order has ID\", function () {",
+                  "    const order = pm.response.json();",
+                  "    pm.expect(order).to.have.property('id');",
+                  "    pm.collectionVariables.set(\"order_id\", order.id);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status is PENDING\", function () {",
+                  "    const order = pm.response.json();",
+                  "    pm.expect(order.status).to.equal('PENDING');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"student123\",\n  \"restaurantId\": {{restaurant_id}},\n  \"dishes\": [\n    {\n      \"name\": \"Pizza Margherita\",\n      \"price\": 12.50\n    }\n  ],\n  \"deliveryLocation\": \"Campus Sophia\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order matches created order\", function () {",
+                  "    const order = pm.response.json();",
+                  "    pm.expect(order.id).to.equal(pm.collectionVariables.get(\"order_id\"));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Time Slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Time slots are returned\", function () {",
+                  "    const slots = pm.response.json();",
+                  "    pm.expect(slots).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Each slot has required fields\", function () {",
+                  "    const slots = pm.response.json();",
+                  "    slots.forEach(slot => {",
+                  "        pm.expect(slot).to.have.property('startTime');",
+                  "        pm.expect(slot).to.have.property('endTime');",
+                  "        pm.expect(slot).to.have.property('availableCapacity');",
+                  "        pm.expect(slot.availableCapacity).to.be.a('number');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/timeslots?restaurantId={{restaurant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "timeslots"],
+              "query": [{"key": "restaurantId", "value": "{{restaurant_id}}"}]
+            }
+          }
+        },
+        {
+          "name": "Process Payment (INTERNAL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Payment processed\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status updated\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('status');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{order_id}},\n  \"paymentMethod\": \"INTERNAL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payment"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Edge Cases & Validation",
+      "item": [
+        {
+          "name": "Invalid Restaurant ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/restaurants/999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "restaurants", "999999"]
+            }
+          }
+        },
+        {
+          "name": "Create Order Missing Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"student123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
