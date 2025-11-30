@@ -12,9 +12,16 @@ public class OrderRepository {
     private final AtomicLong counter = new AtomicLong(1);
 
     public OrderDTO save(OrderDTO order) {
-        if (order.getId() == 0) {
+        //  FIX 1 : Assigner un ID si manquant
+        if (order.getId() == null || order.getId() == 0) {
             order.setId(counter.getAndIncrement());
         }
+
+        //  FIX 2 : Définir le status par défaut
+        if (order.getStatus() == null || order.getStatus().isEmpty()) {
+            order.setStatus("PENDING");
+        }
+
         orders.add(order);
         return order;
     }
@@ -28,5 +35,16 @@ public class OrderRepository {
                 .filter(o -> o.getId() == id)
                 .findFirst()
                 .orElse(null);
+    }
+
+    // FIX 3 : Ajouter une méthode pour mettre à jour une commande
+    public OrderDTO update(OrderDTO order) {
+        OrderDTO existing = findById(order.getId());
+        if (existing != null) {
+            orders.remove(existing);
+            orders.add(order);
+            return order;
+        }
+        return null;
     }
 }

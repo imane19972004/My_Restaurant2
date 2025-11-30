@@ -136,16 +136,16 @@ public class RestaurantHandler implements HttpHandler {
     private void handleGetRestaurantById(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String idStr = path.substring(path.lastIndexOf('/') + 1);
-        
+
         try {
             long id = Long.parseLong(idStr);
             RestaurantDTO dto = dataApi.get("/data/restaurants/" + id, RestaurantDTO.class);
-            
+
             if (dto == null) {
                 sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
                 return;
             }
-            
+
             String json = objectMapper.writeValueAsString(dto);
             String etag = ETagGenerator.generateETag(json);
             String ifNoneMatch = exchange.getRequestHeaders().getFirst("If-None-Match");
@@ -157,9 +157,17 @@ public class RestaurantHandler implements HttpHandler {
             }
 
             sendResponseWithETag(exchange, 200, json, etag);
+        } catch (NumberFormatException e) {
+            // AJOUTÉ : Renvoyer 404 si l'ID n'est pas un nombre valide
+            sendResponse(exchange, 404, "{\"error\": \"Invalid restaurant ID format\"}");
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            // MODIFIÉ : Vérifier si c'est une erreur 404 du DataService
+            if (e.getMessage() != null && e.getMessage().contains("404")) {
+                sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
+            } else {
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
+            }
         }
     }
 

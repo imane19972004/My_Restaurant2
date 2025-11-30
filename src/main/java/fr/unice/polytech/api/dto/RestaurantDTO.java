@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.unice.polytech.dishes.DishType;
 import fr.unice.polytech.restaurants.EstablishmentType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,12 +42,19 @@ public class RestaurantDTO {
     
     public RestaurantDTO() {
         // Required by Jackson for deserialization
+
+        //  AJOUTÉ : Initialiser les listes pour éviter null
+        this.dishes = new ArrayList<>();
+        this.openingHours = new ArrayList<>();
     }
     
     public RestaurantDTO(Long id, String name, DishType cuisineType) {
         this.id = id;
         this.name = name;
         this.cuisineType = cuisineType;
+
+        this.dishes = new ArrayList<>();  //  Initialiser
+        this.openingHours = new ArrayList<>();  //  Initialiser
     }
     
     // ========== Getters/Setters (required by Jackson) ==========
@@ -73,10 +81,10 @@ public class RestaurantDTO {
         this.cuisineType = cuisineType;
     }
     
-    public List<DishDTO> getDishes() {        return dishes;    }
+    public List<DishDTO> getDishes() {       return dishes != null ? dishes : new ArrayList<>();    }
     
     public void setDishes(List<DishDTO> dishes) {
-        this.dishes = dishes;
+        this.dishes = dishes != null ? dishes : new ArrayList<>();
     }
     
     public List<OpeningHoursDTO> getOpeningHours() {
@@ -84,7 +92,7 @@ public class RestaurantDTO {
     }
     
     public void setOpeningHours(List<OpeningHoursDTO> openingHours) {
-        this.openingHours = openingHours;
+        this.openingHours = openingHours != null ? openingHours : new ArrayList<>();  //  Sécurité
     }
     
     // ========== toString for debugging ==========

@@ -4,7 +4,8 @@ public enum DishCategory {
     STARTER,
     MAIN_COURSE,
     DESSERT,
-    DRINK;
+    DRINK,
+    SIDE;
 
     private String categoryName;
 

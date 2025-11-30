@@ -2,6 +2,7 @@ package fr.unice.polytech.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,16 +30,19 @@ public class DishDTO {
     private String dishType; // ITALIAN, FRENCH, JAPANESE, etc.
     
     @JsonProperty("toppings")
-    private List<ToppingDTO> toppings;
+    private List<ToppingDTO> toppings= new ArrayList<>();
         
     public DishDTO() {
         // Required by Jackson
+
+        this.toppings = new ArrayList<>();
     }
     
     public DishDTO(String name, String description, double price) {
         this.name = name;
         this.description = description;
         this.price = price;
+        this.toppings = new ArrayList<>();
     }
         
     public Long getId() {return id; }
@@ -68,9 +72,10 @@ public class DishDTO {
     
     public void setDishType(String dishType) {        this.dishType = dishType;    }
     
-    public List<ToppingDTO> getToppings() {        return toppings;    }
+    public List<ToppingDTO> getToppings() {                return toppings != null ? toppings : new ArrayList<>();  // ✅ Sécurité
+    }
     
-    public void setToppings(List<ToppingDTO> toppings) {        this.toppings = toppings;    }
+    public void setToppings(List<ToppingDTO> toppings) {       this.toppings = toppings != null ? toppings : new ArrayList<>();}  //  Sécurité
     
     
     @Override

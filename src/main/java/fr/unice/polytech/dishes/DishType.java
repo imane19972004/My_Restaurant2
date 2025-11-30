@@ -9,5 +9,6 @@ public enum DishType {
     AMERICAN,
     CHINESE,
     MEXICAN,
-    VEGETARIAN
+    VEGETARIAN,
+    MEDITERRANEAN
 }
