@@ -8,7 +8,6 @@ import fr.unice.polytech.api.dto.RestaurantDTO;
 import java.io.IOException;
 import java.io.OutputStream;
 
-
 public class RestaurantDataHandler implements HttpHandler {
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -28,13 +27,14 @@ public class RestaurantDataHandler implements HttpHandler {
             return;
         }
 
-        // Get by ID
+        // ✅ GET /data/restaurants/{id}
         if (path.matches("/data/restaurants/\\d+")) {
             try {
                 long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
                 RestaurantDTO dto = repository.findById(id);
 
                 if (dto == null) {
+                    // ✅ CRITIQUE : Retourner 404 si restaurant introuvable
                     send(exchange, 404, "{\"error\":\"Restaurant not found\"}");
                     return;
                 }
@@ -42,17 +42,16 @@ public class RestaurantDataHandler implements HttpHandler {
                 send(exchange, 200, mapper.writeValueAsString(dto));
 
             } catch (NumberFormatException e) {
-                //  ID invalide → 404
+                // ✅ CRITIQUE : ID invalide → 404
                 send(exchange, 404, "{\"error\":\"Invalid restaurant ID format\"}");
             } catch (Exception e) {
-                // Autre erreur → 500
                 e.printStackTrace();
                 send(exchange, 500, "{\"error\":\"Internal server error\"}");
             }
             return;
         }
 
-        // Get all
+        // ✅ GET /data/restaurants (all)
         try {
             send(exchange, 200, mapper.writeValueAsString(repository.findAll()));
         } catch (Exception e) {

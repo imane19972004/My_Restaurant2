@@ -7,16 +7,11 @@ import fr.unice.polytech.restaurants.EstablishmentType;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DTO for transferring restaurant data via REST APIs
- * Used by Catalog Service to send restaurant information to frontend 
- * Corresponds to TD requirement: "consulter les restaurants et leurs menus"
- */
 public class RestaurantDTO {
-    
+
     @JsonProperty("id")
     private Long id;
-    
+
     @JsonProperty("name")
     private String name;
 
@@ -28,75 +23,74 @@ public class RestaurantDTO {
 
     @JsonProperty("establishmentType")
     private EstablishmentType establishmentType;
-    
+
     @JsonProperty("cuisineType")
-    private DishType cuisineType; // ITALIAN, FRENCH, JAPANESE, etc.
-    
+    private DishType cuisineType;
+
     @JsonProperty("dishes")
     private List<DishDTO> dishes;
-    
+
     @JsonProperty("openingHours")
     private List<OpeningHoursDTO> openingHours;
-    
-    // ========== Constructors ==========
-    
-    public RestaurantDTO() {
-        // Required by Jackson for deserialization
 
-        //  AJOUTÉ : Initialiser les listes pour éviter null
+    // ✅ FIX CRITIQUE : TOUJOURS initialiser les listes
+    public RestaurantDTO() {
         this.dishes = new ArrayList<>();
         this.openingHours = new ArrayList<>();
     }
-    
+
     public RestaurantDTO(Long id, String name, DishType cuisineType) {
         this.id = id;
         this.name = name;
         this.cuisineType = cuisineType;
-
-        this.dishes = new ArrayList<>();  //  Initialiser
-        this.openingHours = new ArrayList<>();  //  Initialiser
+        this.dishes = new ArrayList<>();
+        this.openingHours = new ArrayList<>();
     }
-    
-    // ========== Getters/Setters (required by Jackson) ==========
-    
-    public Long getId() {        return id;    }
-    
-    public void setId(Long id) {        this.id = id;    }
 
-    public String getPriceRange() {        return priceRange;    }
+    // ========== Getters/Setters ==========
 
-    public EstablishmentType getEstablishmentType() {        return establishmentType;    }
+    public Long getId() { return id; }
+
+    public void setId(Long id) { this.id = id; }
+
+    public String getPriceRange() { return priceRange; }
+
+    public EstablishmentType getEstablishmentType() { return establishmentType; }
 
     public void setEstablishmentType(EstablishmentType establishmentType) {
         this.establishmentType = establishmentType;
     }
 
-    public String getName() {        return name;    }
-    
-    public void setName(String name) {        this.name = name;    }
-    
-    public DishType getCuisineType() {        return cuisineType;    }
-    
+    public String getName() { return name; }
+
+    public void setName(String name) { this.name = name; }
+
+    public DishType getCuisineType() { return cuisineType; }
+
     public void setCuisineType(DishType cuisineType) {
         this.cuisineType = cuisineType;
     }
-    
-    public List<DishDTO> getDishes() {       return dishes != null ? dishes : new ArrayList<>();    }
-    
+
+    // ✅ FIX CRITIQUE : Retourner TOUJOURS une liste (jamais null)
+    public List<DishDTO> getDishes() {
+        return dishes != null ? dishes : new ArrayList<>();
+    }
+
+    // ✅ FIX CRITIQUE : Accepter null et le convertir en liste vide
     public void setDishes(List<DishDTO> dishes) {
         this.dishes = dishes != null ? dishes : new ArrayList<>();
     }
-    
+
+    // ✅ FIX CRITIQUE : Retourner TOUJOURS une liste (jamais null)
     public List<OpeningHoursDTO> getOpeningHours() {
-        return openingHours;
+        return openingHours != null ? openingHours : new ArrayList<>();
     }
-    
+
+    // ✅ FIX CRITIQUE : Accepter null et le convertir en liste vide
     public void setOpeningHours(List<OpeningHoursDTO> openingHours) {
-        this.openingHours = openingHours != null ? openingHours : new ArrayList<>();  //  Sécurité
+        this.openingHours = openingHours != null ? openingHours : new ArrayList<>();
     }
-    
-    // ========== toString for debugging ==========
-    
+
     @Override
     public String toString() {
         return "RestaurantDTO{" +
