@@ -1,6 +1,5 @@
 package fr.unice.polytech.services.catalog.handlers;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

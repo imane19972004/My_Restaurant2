@@ -38,7 +38,7 @@ public class OrderServer {
     
     private void registerHandlers() {
         // Order endpoints
-        server.createContext("/api/orders", new OrderHandler(orderManager, restaurantManager));
+        server.createContext("/api/orders", new OrderHandler());
         
         // TimeSlot endpoints
          server.createContext("/api/timeslots", new TimeSlotHandler(restaurantManager));

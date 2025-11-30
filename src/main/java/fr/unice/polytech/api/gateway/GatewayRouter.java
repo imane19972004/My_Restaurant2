@@ -77,7 +77,7 @@ public class GatewayRouter {
      * @param targetUrl The full URL of the target service
      * @throws IOException if an I/O error occurs
      */
-    private static void forwardRequest(HttpExchange exchange, String targetUrl) throws IOException {
+        private static void forwardRequest(HttpExchange exchange, String targetUrl) throws IOException {
         // Append query parameters if they exist
         String query = exchange.getRequestURI().getQuery();
         if (query != null && !query.isEmpty()) {
@@ -95,7 +95,7 @@ public class GatewayRouter {
         if (List.of("POST", "PUT", "PATCH").contains(exchange.getRequestMethod())) {
             conn.setDoOutput(true);
             try (OutputStream os = conn.getOutputStream();
-                 InputStream is = exchange.getRequestBody()) {
+                InputStream is = exchange.getRequestBody()) {
                 is.transferTo(os);
             }
         }
@@ -108,10 +108,20 @@ public class GatewayRouter {
 
         byte[] responseBytes = responseStream != null ? responseStream.readAllBytes() : new byte[0];
 
-        // Set response headers
+        // ✨ NOUVEAU : Copier TOUS les headers de réponse du backend
+        for (Map.Entry<String, List<String>> header : conn.getHeaderFields().entrySet()) {
+            if (header.getKey() != null) {
+                // Log pour déboguer
+                System.out.println("📋 Copying response header: " + header.getKey() + " = " + header.getValue());
+                
+                for (String value : header.getValue()) {
+                    exchange.getResponseHeaders().add(header.getKey(), value);
+                }
+            }
+        }
+
+        // Ajouter les headers CORS (après les headers du backend pour éviter les conflits)
         addCORSHeaders(exchange);
-        exchange.getResponseHeaders().set("Content-Type",
-                conn.getContentType() != null ? conn.getContentType() : "application/json");
 
         // Send response to client
         exchange.sendResponseHeaders(status, responseBytes.length);

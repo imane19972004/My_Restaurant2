@@ -5,9 +5,8 @@
 // api.js - Utilitaires pour les appels API
 // ============================================
 
-const API_CATALOG_URL = 'http://localhost:8081';
-const API_ORDER_URL = 'http://localhost:8082';
-
+// Utiliser l'API Gateway comme point d'entrée unique
+const API_GATEWAY_URL = 'http://localhost:8080';
 // ========== DEBOUNCE ==========
 // Attend que l'utilisateur arrête d'interagir avant d'appeler l'API
 function debounce(func, delay = 300) {
@@ -102,19 +101,19 @@ async function fetchWithRetry(url, options = {}, maxRetries = 3) {
 
 // ========== API ENDPOINTS ==========
 const API = {
-    // Catalog Service (Port 8081)
+    // Catalog Service via API Gateway
     getRestaurants: (filters = {}) => {
         const params = new URLSearchParams(filters);
-        return fetchWithCache(`${API_CATALOG_URL}/api/restaurants?${params}`);
+        return fetchWithCache(`${API_GATEWAY_URL}/api/restaurants?${params}`);
     },
     
     getRestaurantById: (id) => {
-        return fetchWithCache(`${API_CATALOG_URL}/api/restaurants/${id}`);
+        return fetchWithCache(`${API_GATEWAY_URL}/api/restaurants/${id}`);
     },
     
-    // Order Service (Port 8082)
+    // Order Service via API Gateway
     createOrder: (orderData) => {
-        return fetch(`${API_ORDER_URL}/api/orders`, {
+        return fetchWithRetry(`${API_GATEWAY_URL}/api/orders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)
@@ -122,11 +121,11 @@ const API = {
     },
     
     getTimeSlots: (restaurantId) => {
-        return fetchWithCache(`${API_ORDER_URL}/api/timeslots?restaurantId=${restaurantId}`);
+        return fetchWithCache(`${API_GATEWAY_URL}/api/timeslots?restaurantId=${restaurantId}`);
     },
     
     processPayment: (paymentData) => {
-        return fetch(`${API_ORDER_URL}/api/payment`, {
+        return fetchWithRetry(`${API_GATEWAY_URL}/api/payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(paymentData)

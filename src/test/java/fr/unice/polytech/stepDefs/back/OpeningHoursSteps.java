@@ -6,7 +6,9 @@ import io.cucumber.java.en.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,6 +59,18 @@ public class OpeningHoursSteps {
         }
     }
 
+    @When("the owner adds new opening hours for {string} from {string} to {string}")
+    public void the_owner_adds_new_opening_hours_for_from(String day, String start, String end) {
+        // Same as regular add - allows adding multiple slots per day
+        try {
+            DayOfWeek dayEnum = DayOfWeek.valueOf(day.toUpperCase());
+            OpeningHours hours = new OpeningHours(dayEnum, LocalTime.parse(start), LocalTime.parse(end));
+            restaurant.addOpeningHours(hours);
+        } catch (IllegalArgumentException e) {
+            this.thrownException = e;
+        }
+    }
+
     @When("the owner tries to add new opening hours for {string} from {string} to {string}")
     public void the_owner_tries_to_add_new_opening_hours_for_from(String day, String start, String end) {
         try {
@@ -81,7 +95,22 @@ public class OpeningHoursSteps {
 
     @Then("the restaurant schedule should contain hours for {string} from {string} to {string}")
     public void the_restaurant_schedule_should_contain_hours_for_from(String day, String start, String end) {
-        the_restaurant_schedule_for_should_be_from_to(day, start, end);
+        DayOfWeek dayEnum = DayOfWeek.valueOf(day.toUpperCase());
+        LocalTime expectedStart = LocalTime.parse(start);
+        LocalTime expectedEnd = LocalTime.parse(end);
+        List<OpeningHours> hoursForDay = this.restaurant.getOpeningHours().stream()
+                .filter(oh -> oh.getDay() == dayEnum)
+                .collect(Collectors.toList());
+
+        assertTrue(!hoursForDay.isEmpty(), "No opening hours found for " + day);
+        
+        boolean matchFound = hoursForDay.stream()
+                .anyMatch(oh -> oh.getOpeningTime().equals(expectedStart) && 
+                               oh.getClosingTime().equals(expectedEnd));
+        
+        assertTrue(matchFound, 
+            "No time slot found for " + day + " from " + start + " to " + end + 
+            ". Available slots: " + hoursForDay);
     }
 
     @Then("the restaurant schedule for {string} should be from {string} to {string}")
@@ -106,5 +135,18 @@ public class OpeningHoursSteps {
                 this.thrownException.getMessage().contains(expectedErrorMessage),
                 "The exception message was: '" + this.thrownException.getMessage() + "'"
         );
+    }
+
+
+    @Then("the restaurant should have {int} time slot(s) for {string}")
+    public void the_restaurant_should_have_time_slots_for(int expectedCount, String day) {
+        DayOfWeek dayEnum = DayOfWeek.valueOf(day.toUpperCase());
+        
+        long actualCount = restaurant.getOpeningHours().stream()
+                .filter(oh -> oh.getDay() == dayEnum)
+                .count();
+        
+        assertEquals(expectedCount, actualCount, 
+            "Expected " + expectedCount + " time slot(s) for " + day + " but found " + actualCount);
     }
 }

@@ -7,20 +7,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * DTO for restaurant opening hours
  * 
  * TD requirement: Filtrer par "disponibilité horaire"
+ * 
+ * NOTE: Uses String for day/times to avoid Jackson serialization issues
  */
 public class OpeningHoursDTO {
     
     @JsonProperty("day")
-    private String day; // MONDAY, TUESDAY, WEDNESDAY, etc.
+    private String day; // "MONDAY", "TUESDAY", "WEDNESDAY", etc.
     
     @JsonProperty("openingTime")
     private String openingTime; // Format: "11:30"
     
     @JsonProperty("closingTime")
     private String closingTime; // Format: "14:00"
-    
-    // ========== Constructors ==========
-    
+        
     public OpeningHoursDTO() {
         // Required by Jackson
     }
@@ -33,29 +33,19 @@ public class OpeningHoursDTO {
     
     // ========== Getters/Setters ==========
     
-    public String getDay() {
-        return day;
-    }
+    public String getDay() {return day;}
     
-    public void setDay(String day) {
-        this.day = day;
-    }
+    public void setDay(String day) {this.day = day;}
     
-    public String getOpeningTime() {
-        return openingTime;
-    }
+    public String getOpeningTime() { return openingTime;}
     
     public void setOpeningTime(String openingTime) {
         this.openingTime = openingTime;
     }
     
-    public String getClosingTime() {
-        return closingTime;
-    }
+    public String getClosingTime() {return closingTime;}
     
-    public void setClosingTime(String closingTime) {
-        this.closingTime = closingTime;
-    }
+    public void setClosingTime(String closingTime) {    this.closingTime = closingTime;}
     
     // ========== toString ==========
     

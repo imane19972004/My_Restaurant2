@@ -1,48 +1,41 @@
 package fr.unice.polytech.services.catalog.handlers;
 
-
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import fr.unice.polytech.restaurants.Restaurant;
+import fr.unice.polytech.services.catalog.mappers.RestaurantMapper;
+import fr.unice.polytech.services.shared.DataApiClient;
+import fr.unice.polytech.utils.ETagGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import fr.unice.polytech.api.dto.PaginatedResponseDTO;
 import fr.unice.polytech.api.dto.RestaurantDTO;
-import fr.unice.polytech.dishes.DishType;
-import fr.unice.polytech.restaurants.Restaurant;
-import fr.unice.polytech.services.catalog.mappers.RestaurantMapper;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Handler for Restaurant endpoints
- * 
- * GET /api/restaurants?cuisineType=ITALIAN&hasVegetarian=true
- * GET /api/restaurants/{id}
- */
 public class RestaurantHandler implements HttpHandler {
-    
+
+    private final DataApiClient dataApi = new DataApiClient("http://localhost:8090");
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final List<Restaurant> mockRestaurants;
-    
-    public RestaurantHandler() {
-        // Initialize mock data
-        this.mockRestaurants = createMockRestaurants();
-    }
-    
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getPath();
-        
+
         try {
             if ("GET".equals(method)) {
                 if (path.matches("/api/restaurants/\\d+")) {
-                    // GET /api/restaurants/{id}
                     handleGetRestaurantById(exchange);
                 } else {
-                    // GET /api/restaurants with filters
                     handleGetRestaurants(exchange);
                 }
             } else {
@@ -53,116 +46,145 @@ public class RestaurantHandler implements HttpHandler {
             sendResponse(exchange, 500, "{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
-    
-    private void handleGetRestaurants(HttpExchange exchange) throws IOException {
+
+    private void handleGetRestaurants(HttpExchange exchange) throws Exception {
         URI uri = exchange.getRequestURI();
         Map<String, String> queryParams = parseQueryParams(uri.getQuery());
-        
-        // Filter restaurants
-        List<Restaurant> filteredRestaurants = mockRestaurants;
-        
-        // Filter by cuisine type
+
+        int page = Integer.parseInt(queryParams.getOrDefault("page", "1"));
+        int limit = Integer.parseInt(queryParams.getOrDefault("limit", "10"));
+
+        List<RestaurantDTO> allDtos = List.of(dataApi.get("/data/restaurants", RestaurantDTO[].class));
+        List<Restaurant> restaurants = allDtos.stream()
+                .map(RestaurantMapper::fromDTO)
+                .collect(Collectors.toList());
+
         if (queryParams.containsKey("cuisineType")) {
             String cuisineType = queryParams.get("cuisineType");
-            filteredRestaurants = filteredRestaurants.stream()
-                .filter(r -> r.getCuisineType() != null && 
-                            r.getCuisineType().toString().equalsIgnoreCase(cuisineType))
-                .collect(Collectors.toList());
+            restaurants = restaurants.stream()
+                    .filter(r -> r.getCuisineType().toString().equalsIgnoreCase(cuisineType))
+                    .collect(Collectors.toList());
         }
-        
-        // Filter by vegetarian dishes
-        if (queryParams.containsKey("hasVegetarian") && 
-            "true".equalsIgnoreCase(queryParams.get("hasVegetarian"))) {
-            filteredRestaurants = filteredRestaurants.stream()
-                .filter(r -> r.getDishes().stream()
-                    .anyMatch(d -> d.getCuisineType() == DishType.VEGETARIAN))
-                .collect(Collectors.toList());
+
+        if (queryParams.containsKey("category")) {
+            String category = queryParams.get("category");
+            restaurants = restaurants.stream()
+                    .filter(r -> r.getDishes().stream()
+                            .anyMatch(dish -> dish.getCategory() != null && 
+                                    dish.getCategory().toString().equalsIgnoreCase(category)))
+                    .collect(Collectors.toList());
         }
-        
-        // Convert to DTOs
-        List<RestaurantDTO> dtos = filteredRestaurants.stream()
-            .map(RestaurantMapper::toDTO)
-            .collect(Collectors.toList());
-        
-        String jsonResponse = objectMapper.writeValueAsString(dtos);
-        sendResponse(exchange, 200, jsonResponse);
+
+        if (queryParams.containsKey("availableNow") && "true".equalsIgnoreCase(queryParams.get("availableNow"))) {
+            restaurants = restaurants.stream()
+                    .filter(this::isCurrentlyOpen)
+                    .collect(Collectors.toList());
+        }
+
+        int totalItems = restaurants.size();
+        int startIndex = Math.max((page - 1) * limit, 0);
+        int endIndex = Math.min(startIndex + limit, totalItems);
+
+        List<Restaurant> paginated = restaurants.subList(startIndex, endIndex);
+        List<RestaurantDTO> paginatedDTO = paginated.stream()
+                .map(RestaurantMapper::toDTO)
+                .collect(Collectors.toList());
+
+        PaginatedResponseDTO<RestaurantDTO> response = new PaginatedResponseDTO<>(paginatedDTO, page, limit, totalItems);
+        String json = objectMapper.writeValueAsString(response);
+
+        String etag = ETagGenerator.generateETag(json);
+        String ifNoneMatch = exchange.getRequestHeaders().getFirst("If-None-Match");
+
+        if (etag.equals(ifNoneMatch)) {
+            exchange.getResponseHeaders().set("ETag", etag);
+            exchange.sendResponseHeaders(304, -1);
+            return;
+        }
+
+        sendResponseWithETag(exchange, 200, json, etag);
     }
-    
+
+    private boolean isCurrentlyOpen(Restaurant restaurant) {
+        if (restaurant.getOpeningHours() == null || restaurant.getOpeningHours().isEmpty()) {
+            return false;
+        }
+        
+        LocalDateTime now = LocalDateTime.now();
+        DayOfWeek currentDay = now.getDayOfWeek();
+        LocalTime currentTime = now.toLocalTime();
+        
+        return restaurant.getOpeningHours().stream()
+                .anyMatch(hours -> 
+                    hours.getDay() == currentDay &&
+                    !currentTime.isBefore(hours.getOpeningTime()) &&
+                    currentTime.isBefore(hours.getClosingTime())
+                );
+    }
+
     private void handleGetRestaurantById(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String idStr = path.substring(path.lastIndexOf('/') + 1);
         
         try {
             long id = Long.parseLong(idStr);
-            Optional<Restaurant> restaurant = mockRestaurants.stream()
-                .filter(r -> r.hashCode() == id)
-                .findFirst();
+            RestaurantDTO dto = dataApi.get("/data/restaurants/" + id, RestaurantDTO.class);
             
-            if (restaurant.isPresent()) {
-                RestaurantDTO dto = RestaurantMapper.toDTO(restaurant.get());
-                String jsonResponse = objectMapper.writeValueAsString(dto);
-                sendResponse(exchange, 200, jsonResponse);
-            } else {
+            if (dto == null) {
                 sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
+                return;
             }
-        } catch (NumberFormatException e) {
-            sendResponse(exchange, 400, "{\"error\": \"Invalid restaurant ID\"}");
+            
+            String json = objectMapper.writeValueAsString(dto);
+            String etag = ETagGenerator.generateETag(json);
+            String ifNoneMatch = exchange.getRequestHeaders().getFirst("If-None-Match");
+
+            if (etag.equals(ifNoneMatch)) {
+                exchange.getResponseHeaders().set("ETag", etag);
+                exchange.sendResponseHeaders(304, -1);
+                return;
+            }
+
+            sendResponseWithETag(exchange, 200, json, etag);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
         }
     }
-    
+
     private Map<String, String> parseQueryParams(String query) {
         Map<String, String> params = new HashMap<>();
-        if (query == null || query.isEmpty()) {
-            return params;
-        }
+        if (query == null || query.isEmpty()) return params;
         
         for (String param : query.split("&")) {
-            String[] pair = param.split("=");
-            if (pair.length == 2) {
-                params.put(pair[0], pair[1]);
+            String[] keyValue = param.split("=", 2);
+            if (keyValue.length == 2) {
+                params.put(
+                    URLDecoder.decode(keyValue[0], StandardCharsets.UTF_8),
+                    URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8)
+                );
             }
         }
         return params;
     }
-    
+
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
-        
+        byte[] bytes = response.getBytes();
+        exchange.sendResponseHeaders(statusCode, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(response.getBytes());
+            os.write(bytes);
         }
     }
-    
-    // ========== MOCK DATA ==========
-    
-    private List<Restaurant> createMockRestaurants() {
-        List<Restaurant> restaurants = new ArrayList<>();
-        
-        // Italian Restaurant
-        Restaurant italian = new Restaurant.Builder("La Bella Vita")
-            .withCuisineType(DishType.ITALIAN)
-            .build();
-        italian.addDish("Margherita Pizza", "Classic tomato and mozzarella", 12.50);
-        italian.addDish("Carbonara", "Creamy pasta with bacon", 14.00);
-        restaurants.add(italian);
-        
-        // Vegetarian Restaurant
-        Restaurant veggie = new Restaurant.Builder("Green Garden")
-            .withCuisineType(DishType.VEGETARIAN)
-            .build();
-        veggie.addDish("Veggie Burger", "Plant-based burger", 11.00);
-        veggie.addDish("Quinoa Salad", "Healthy quinoa bowl", 9.50);
-        restaurants.add(veggie);
-        
-        // Japanese Restaurant
-        Restaurant japanese = new Restaurant.Builder("Sakura Sushi")
-            .withCuisineType(DishType.JAPANESE)
-            .build();
-        japanese.addDish("California Roll", "Fresh sushi roll", 13.00);
-        japanese.addDish("Miso Soup", "Traditional soup", 4.50);
-        restaurants.add(japanese);
-        
-        return restaurants;
+
+    private void sendResponseWithETag(HttpExchange exchange, int statusCode, String response, String etag) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.getResponseHeaders().set("ETag", etag);
+        exchange.getResponseHeaders().set("Cache-Control", "public, max-age=300");
+        byte[] bytes = response.getBytes();
+        exchange.sendResponseHeaders(statusCode, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
     }
 }

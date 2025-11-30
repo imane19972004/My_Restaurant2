@@ -30,9 +30,7 @@ public class DishDTO {
     
     @JsonProperty("toppings")
     private List<ToppingDTO> toppings;
-    
-    // ========== Constructors ==========
-    
+        
     public DishDTO() {
         // Required by Jackson
     }
@@ -42,66 +40,38 @@ public class DishDTO {
         this.description = description;
         this.price = price;
     }
-    
-    // ========== Getters/Setters ==========
-    
-    public Long getId() {
-        return id;
-    }
+        
+    public Long getId() {return id; }
     
     public void setId(Long id) {
-        this.id = id;
-    }
+        this.id = id; }
     
     public String getName() {
         return name;
     }
     
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) {  this.name = name; }
     
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription() {        return description;    }
     
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public void setDescription(String description) {        this.description = description;    }
     
-    public double getPrice() {
-        return price;
-    }
+    public double getPrice() {        return price;    }
     
-    public void setPrice(double price) {
-        this.price = price;
-    }
+    public void setPrice(double price) {        this.price = price;    }
     
-    public String getCategory() {
-        return category;
-    }
+    public String getCategory() {        return category;    }
     
-    public void setCategory(String category) {
-        this.category = category;
-    }
+    public void setCategory(String category) {        this.category = category;    }
     
-    public String getDishType() {
-        return dishType;
-    }
+    public String getDishType() {        return dishType;    }
     
-    public void setDishType(String dishType) {
-        this.dishType = dishType;
-    }
+    public void setDishType(String dishType) {        this.dishType = dishType;    }
     
-    public List<ToppingDTO> getToppings() {
-        return toppings;
-    }
+    public List<ToppingDTO> getToppings() {        return toppings;    }
     
-    public void setToppings(List<ToppingDTO> toppings) {
-        this.toppings = toppings;
-    }
+    public void setToppings(List<ToppingDTO> toppings) {        this.toppings = toppings;    }
     
-    // ========== toString ==========
     
     @Override
     public String toString() {

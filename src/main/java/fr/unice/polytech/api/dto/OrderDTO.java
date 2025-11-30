@@ -42,9 +42,7 @@ public class OrderDTO {
     
     // ========== Constructors ==========
     
-    public OrderDTO() {
-        // Required by Jackson
-    }
+    public OrderDTO() {    }
     
     public OrderDTO(Long id, String studentId, Long restaurantId) {
         this.id = id;
@@ -54,77 +52,41 @@ public class OrderDTO {
     
     // ========== Getters/Setters ==========
     
-    public Long getId() {
-        return id;
-    }
+    public Long getId() {        return id;    }
     
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) {        this.id = id;    }
     
-    public String getStudentId() {
-        return studentId;
-    }
+    public String getStudentId() {        return studentId;    }
     
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
-    }
+    public void setStudentId(String studentId) {        this.studentId = studentId;    }
     
-    public Long getRestaurantId() {
-        return restaurantId;
-    }
+    public Long getRestaurantId() {        return restaurantId;    }
     
-    public void setRestaurantId(Long restaurantId) {
-        this.restaurantId = restaurantId;
-    }
+    public void setRestaurantId(Long restaurantId) {        this.restaurantId = restaurantId;    }
     
-    public List<DishDTO> getDishes() {
-        return dishes;
-    }
+    public List<DishDTO> getDishes() {        return dishes;    }
     
-    public void setDishes(List<DishDTO> dishes) {
-        this.dishes = dishes;
-    }
+    public void setDishes(List<DishDTO> dishes) {        this.dishes = dishes;    }
     
-    public double getTotalAmount() {
-        return totalAmount;
-    }
+    public double getTotalAmount() {        return totalAmount;    }
     
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
-    }
+    public void setTotalAmount(double totalAmount) {        this.totalAmount = totalAmount;    }
     
-    public String getStatus() {
-        return status;
-    }
+    public String getStatus() {        return status;    }
     
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public void setStatus(String status) {        this.status = status;    }
     
-    public String getDeliveryLocation() {
-        return deliveryLocation;
-    }
+    public String getDeliveryLocation() {        return deliveryLocation;    }
     
-    public void setDeliveryLocation(String deliveryLocation) {
-        this.deliveryLocation = deliveryLocation;
-    }
+    public void setDeliveryLocation(String deliveryLocation) {        this.deliveryLocation = deliveryLocation;    }
     
-    public TimeSlotDTO getTimeSlot() {
-        return timeSlot;
-    }
+    public TimeSlotDTO getTimeSlot() {        return timeSlot;    }
     
-    public void setTimeSlot(TimeSlotDTO timeSlot) {
-        this.timeSlot = timeSlot;
-    }
+    public void setTimeSlot(TimeSlotDTO timeSlot) {        this.timeSlot = timeSlot;    }
     
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
+    public String getPaymentMethod() {        return paymentMethod;    }
     
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
+    public void setPaymentMethod(String paymentMethod) {        this.paymentMethod = paymentMethod;    }
     
     // ========== toString ==========
     

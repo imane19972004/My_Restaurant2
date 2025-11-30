@@ -6,9 +6,7 @@ import fr.unice.polytech.restaurants.Restaurant;
 import fr.unice.polytech.users.DeliveryLocation;
 import fr.unice.polytech.users.StudentAccount;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class OrderManager {
 

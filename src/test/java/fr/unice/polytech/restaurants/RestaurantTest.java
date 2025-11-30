@@ -409,14 +409,24 @@ class RestaurantTest {
     }
 
     @Test
-    void addOpeningHours_ShouldThrowException_WhenHoursAreNull() {
-        assertThrows(IllegalArgumentException.class, () -> restaurant.addOpeningHours(null));
+    void addOpeningHours_ShouldAllowMultipleSlotsPerDay() {
+        // Arrange: Create two different time slots for the same day (lunch and dinner)
+        OpeningHours mondayLunch = new OpeningHours(DayOfWeek.MONDAY, LocalTime.of(11, 30), LocalTime.of(14, 0));
+        OpeningHours mondayDinner = new OpeningHours(DayOfWeek.MONDAY, LocalTime.of(18, 30), LocalTime.of(22, 0));
+        
+        // Act: Add both slots for Monday
+        restaurant.addOpeningHours(mondayLunch);
+        restaurant.addOpeningHours(mondayDinner);
+        
+        // Assert: Both slots should be present
+        assertEquals(2, restaurant.getOpeningHours().size());
+        assertTrue(restaurant.getOpeningHours().contains(mondayLunch));
+        assertTrue(restaurant.getOpeningHours().contains(mondayDinner));
     }
 
     @Test
-    void addOpeningHours_ShouldThrowException_WhenDayAlreadyExists() {
-        restaurant.addOpeningHours(mondayHours);
-        assertThrows(IllegalArgumentException.class, () -> restaurant.addOpeningHours(mondayUpdatedHours));
+    void addOpeningHours_ShouldThrowException_WhenHoursAreNull() {
+        assertThrows(IllegalArgumentException.class, () -> restaurant.addOpeningHours(null));
     }
 
 

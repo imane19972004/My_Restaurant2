@@ -1,6 +1,5 @@
 package  fr.unice.polytech.restaurants;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,13 +12,10 @@ public class RestaurantManager {
     // Storage for all restaurants (simple in-memory storage)
     private Map<String, Restaurant> restaurants;
 
-
-
     public RestaurantManager() {
         this.restaurants = new HashMap<>();
 
     }
-
 
     //Gets a restaurant by its name.
     public Restaurant getRestaurant(String restaurantName) {
@@ -28,7 +24,6 @@ public class RestaurantManager {
         }
         return restaurants.get(restaurantName);
     }
-
 
     //Blocks a time slot for a specific restaurant so it prevents the time slot from being available for orders.
     public void blockTimeSlot(TimeSlot slot, Restaurant restaurant) {
@@ -48,11 +43,6 @@ public class RestaurantManager {
         return restaurant.getAvailableTimeSlots();
     }
 
-
-
-    // ========== UTILITY METHODS for managing the restaurant collection ==========
-
-
     //Adds a restaurant to the manager
     public void addRestaurant(Restaurant restaurant) {
         if (restaurant == null) {
@@ -66,9 +56,6 @@ public class RestaurantManager {
     public List<Restaurant> getAllRestaurants() {
         return new ArrayList<>(restaurants.values());
     }
-
-
-
 
     //Unblock a time slot for a restaurant
     public void unblockTimeSlot(TimeSlot slot, Restaurant restaurant) {

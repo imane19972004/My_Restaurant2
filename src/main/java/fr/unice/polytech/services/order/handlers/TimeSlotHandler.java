@@ -1,5 +1,9 @@
 package fr.unice.polytech.services.order.handlers;
 
+
+import fr.unice.polytech.utils.ETagGenerator;
+
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -34,7 +38,6 @@ public class TimeSlotHandler implements HttpHandler {
     
     public TimeSlotHandler(RestaurantManager restaurantManager) {
         this.restaurantManager = restaurantManager;
-        initializeMockTimeSlots();
     }
     
     @Override
@@ -53,7 +56,7 @@ public class TimeSlotHandler implements HttpHandler {
         }
     }
     
-    private void handleGetTimeSlots(HttpExchange exchange) throws IOException {
+        private void handleGetTimeSlots(HttpExchange exchange) throws IOException {
         URI uri = exchange.getRequestURI();
         Map<String, String> queryParams = parseQueryParams(uri.getQuery());
         
@@ -86,14 +89,51 @@ public class TimeSlotHandler implements HttpHandler {
                     int capacity = restaurant.getCapacity(slot);
                     return OrderMapper.timeSlotToDTO(slot, capacity);
                 })
-                .filter(dto -> dto.getAvailableCapacity() > 0) // Only return slots with capacity
+                .filter(dto -> dto.getAvailableCapacity() > 0)
                 .collect(Collectors.toList());
             
             String jsonResponse = objectMapper.writeValueAsString(slotDTOs);
-            sendResponse(exchange, 200, jsonResponse);
+            
+            // ✨ NOUVEAU : Générer ETag
+            String etag = ETagGenerator.generateETag(jsonResponse);
+            
+            // ✨ NOUVEAU : Vérifier If-None-Match
+            String ifNoneMatch = exchange.getRequestHeaders().getFirst("If-None-Match");
+            
+            if (ifNoneMatch != null && ifNoneMatch.equals(etag)) {
+                System.out.println("✅ ETag match → 304 Not Modified (timeslots)");
+                exchange.getResponseHeaders().set("ETag", etag);
+                exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
+                exchange.sendResponseHeaders(304, -1);
+                exchange.close();
+            } else {
+                System.out.println("🆕 New timeslots → 200 OK with ETag: " + etag);
+                sendResponseWithETag(exchange, 200, jsonResponse, etag);
+            }
             
         } catch (NumberFormatException e) {
             sendResponse(exchange, 400, "{\"error\": \"Invalid restaurant ID\"}");
+        }
+    }
+    /**
+     * Send HTTP response with ETag header
+     */
+    private void sendResponseWithETag(HttpExchange exchange, int statusCode, String response, String etag) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.getResponseHeaders().set("ETag", etag);
+        
+        if (statusCode == 200) {
+            exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
+            System.out.println("✅ Cache-Control header ajouté : public, max-age=60");
+            System.out.println("✅ ETag header ajouté : " + etag);
+        } else {
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+        }
+        
+        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
+        
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response.getBytes());
         }
     }
     
@@ -114,39 +154,23 @@ public class TimeSlotHandler implements HttpHandler {
     
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
+        
+        //  NOUVEAU : Ajouter Cache-Control header
+        if (statusCode == 200) {
+            // Cache les créneaux pendant 1 minute (60 secondes) - plus dynamique
+            exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
+            System.out.println("✅ Cache-Control header ajouté : public, max-age=60");
+        } else {
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            System.out.println("⚠️ Cache-Control header ajouté : no-store (erreur)");
+        }
+        
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
         
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(response.getBytes());
         }
     }
-    
-    // ========== MOCK DATA ==========
-    
-    private void initializeMockTimeSlots() {
-        // Create time slots for all restaurants
-        for (Restaurant restaurant : restaurantManager.getAllRestaurants()) {
-            // Lunch time slots (12:00 - 14:00)
-            TimeSlot lunch1 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(12, 0), LocalTime.of(12, 30));
-            TimeSlot lunch2 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(12, 30), LocalTime.of(13, 0));
-            TimeSlot lunch3 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(13, 0), LocalTime.of(13, 30));
-            TimeSlot lunch4 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(13, 30), LocalTime.of(14, 0));
-            
-            // Dinner time slots (19:00 - 21:00)
-            TimeSlot dinner1 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(19, 0), LocalTime.of(19, 30));
-            TimeSlot dinner2 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(19, 30), LocalTime.of(20, 0));
-            TimeSlot dinner3 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(20, 0), LocalTime.of(20, 30));
-            TimeSlot dinner4 = new TimeSlot(DayOfWeek.MONDAY, LocalTime.of(20, 30), LocalTime.of(21, 0));
-            
-            // Set capacity for each slot (simulate dynamic availability)
-            restaurant.setCapacity(lunch1, 5);
-            restaurant.setCapacity(lunch2, 3);
-            restaurant.setCapacity(lunch3, 2);
-            restaurant.setCapacity(lunch4, 4);
-            restaurant.setCapacity(dinner1, 6);
-            restaurant.setCapacity(dinner2, 4);
-            restaurant.setCapacity(dinner3, 1); // Almost full
-            restaurant.setCapacity(dinner4, 5);
-        }
-    }
+
+
 }

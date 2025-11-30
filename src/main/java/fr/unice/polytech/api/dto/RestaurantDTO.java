@@ -1,6 +1,8 @@
 package fr.unice.polytech.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import fr.unice.polytech.dishes.DishType;
+import fr.unice.polytech.restaurants.EstablishmentType;
 
 import java.util.List;
 
@@ -16,9 +18,18 @@ public class RestaurantDTO {
     
     @JsonProperty("name")
     private String name;
+
+    @JsonProperty("priceRange")
+    private String priceRange;
+
+    @JsonProperty("open")
+    private boolean open;
+
+    @JsonProperty("establishmentType")
+    private EstablishmentType establishmentType;
     
     @JsonProperty("cuisineType")
-    private String cuisineType; // ITALIAN, FRENCH, JAPANESE, etc.
+    private DishType cuisineType; // ITALIAN, FRENCH, JAPANESE, etc.
     
     @JsonProperty("dishes")
     private List<DishDTO> dishes;
@@ -32,7 +43,7 @@ public class RestaurantDTO {
         // Required by Jackson for deserialization
     }
     
-    public RestaurantDTO(Long id, String name, String cuisineType) {
+    public RestaurantDTO(Long id, String name, DishType cuisineType) {
         this.id = id;
         this.name = name;
         this.cuisineType = cuisineType;
@@ -40,33 +51,29 @@ public class RestaurantDTO {
     
     // ========== Getters/Setters (required by Jackson) ==========
     
-    public Long getId() {
-        return id;
-    }
+    public Long getId() {        return id;    }
     
-    public void setId(Long id) {
-        this.id = id;
+    public void setId(Long id) {        this.id = id;    }
+
+    public String getPriceRange() {        return priceRange;    }
+
+    public EstablishmentType getEstablishmentType() {        return establishmentType;    }
+
+    public void setEstablishmentType(EstablishmentType establishmentType) {
+        this.establishmentType = establishmentType;
     }
+
+    public String getName() {        return name;    }
     
-    public String getName() {
-        return name;
-    }
+    public void setName(String name) {        this.name = name;    }
     
-    public void setName(String name) {
-        this.name = name;
-    }
+    public DishType getCuisineType() {        return cuisineType;    }
     
-    public String getCuisineType() {
-        return cuisineType;
-    }
-    
-    public void setCuisineType(String cuisineType) {
+    public void setCuisineType(DishType cuisineType) {
         this.cuisineType = cuisineType;
     }
     
-    public List<DishDTO> getDishes() {
-        return dishes;
-    }
+    public List<DishDTO> getDishes() {        return dishes;    }
     
     public void setDishes(List<DishDTO> dishes) {
         this.dishes = dishes;
@@ -90,5 +97,17 @@ public class RestaurantDTO {
                 ", cuisineType='" + cuisineType + '\'' +
                 ", dishes=" + (dishes != null ? dishes.size() + " dishes" : "no dishes") +
                 '}';
+    }
+
+    public void setPriceRange(String range) {
+        this.priceRange = range;
+    }
+
+    public void setOpen(boolean b) {
+        this.open = b;
+    }
+
+    public boolean isOpen() {
+        return open;
     }
 }

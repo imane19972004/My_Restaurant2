@@ -18,17 +18,13 @@ public class Restaurant extends UserAccount {
     private String restaurantName;
     private List<Dish> dishes;
     private List<Order> orders;
-   //Simple initialisation 
     private List<OpeningHours> openingHours;
     private Map<TimeSlot, Integer> capacityByTimeSlot;
     private EstablishmentType establishmentType;
     private DishType cuisineType;
+    private String priceRange;
     private final DishManager dishManager = new DishManager();
 
-
-
-
-   //Simple initialisation
     public Restaurant(String restaurantName) {
         if (restaurantName == null || restaurantName.isEmpty()) {
             throw new IllegalArgumentException("Restaurant name cannot be null or empty");
@@ -40,9 +36,6 @@ public class Restaurant extends UserAccount {
         this.openingHours = new ArrayList<>();
     }
     
-    
-    //Private constructor for Builder pattern.
-    //Avoid public Restaurant(String restaurantName, List<Dish> dishes, List<TimeSlot> availableTimeSlots) {..}
     private Restaurant(Builder builder) {
         this.restaurantName = builder.restaurantName;
         this.dishes = new ArrayList<>(builder.dishes);
@@ -51,14 +44,26 @@ public class Restaurant extends UserAccount {
         this.cuisineType = builder.cuisineType;
         this.openingHours = new ArrayList<>(builder.openingHours);
     }
-    
 
 
-    
+    public Map<TimeSlot, Integer> getCapacityByTimeSlot() {
+        return capacityByTimeSlot;
+    }
+
+    public String getPriceRange() {
+        return priceRange;
+    }
+
+    public DishManager getDishManager() {
+        return dishManager;
+    }
+
     public String getRestaurantName() {
         return restaurantName;
     }
-    
+    public EstablishmentType getEstablishmentType() {
+        return establishmentType;
+    }
     
     //return a copy of the dishes/TimeSlot list to prevent external modification.
     public List<Dish> getDishes() {
@@ -116,13 +121,6 @@ public class Restaurant extends UserAccount {
     public void addOpeningHours(OpeningHours newOpeningHours) {
         if (newOpeningHours == null) {
             throw new IllegalArgumentException("Opening hours cannot be null.");
-        }
-        for (OpeningHours existingHours : this.openingHours) {
-            if (existingHours.getDay() == newOpeningHours.getDay()) {
-                throw new IllegalArgumentException(
-                        "Opening hours for " + newOpeningHours.getDay() + " already exist."
-                );
-            }
         }
         this.openingHours.add(newOpeningHours);
     }

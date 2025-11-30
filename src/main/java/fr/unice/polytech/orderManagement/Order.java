@@ -20,7 +20,6 @@ public class Order {
     private DeliveryLocation deliveryLocation;
     private PaymentMethod paymentMethod;
 
-
     private Order(Builder builder) {
         this.studentAccount = builder.studentAccount;
         this.amount = builder.amount;

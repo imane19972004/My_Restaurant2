@@ -23,9 +23,7 @@ public class TimeSlotDTO {
     
     @JsonProperty("dayOfWeek")
     private String dayOfWeek; // MONDAY, TUESDAY, etc.
-    
-    // ========== Constructors ==========
-    
+        
     public TimeSlotDTO() {
         // Required by Jackson
     }
@@ -38,37 +36,23 @@ public class TimeSlotDTO {
     
     // ========== Getters/Setters ==========
     
-    public String getStartTime() {
-        return startTime;
-    }
+    public String getStartTime() {        return startTime;    }
     
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
+    public void setStartTime(String startTime) {       this.startTime = startTime;    }
     
-    public String getEndTime() {
-        return endTime;
-    }
+    public String getEndTime() {        return endTime;    }
     
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
+    public void setEndTime(String endTime) {        this.endTime = endTime;    }
     
-    public int getAvailableCapacity() {
-        return availableCapacity;
-    }
+    public int getAvailableCapacity() {        return availableCapacity;    }
     
     public void setAvailableCapacity(int availableCapacity) {
         this.availableCapacity = availableCapacity;
     }
     
-    public String getDayOfWeek() {
-        return dayOfWeek;
-    }
+    public String getDayOfWeek() {        return dayOfWeek;    }
     
-    public void setDayOfWeek(String dayOfWeek) {
-        this.dayOfWeek = dayOfWeek;
-    }
+    public void setDayOfWeek(String dayOfWeek) {        this.dayOfWeek = dayOfWeek;    }
     
     // ========== toString ==========
     

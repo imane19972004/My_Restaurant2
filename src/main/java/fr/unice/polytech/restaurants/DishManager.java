@@ -19,11 +19,9 @@ public class DishManager {
         dish.setDescription(newDescription);
     }
 
-
     public void updateDishCategory(Dish dish, DishCategory newCategory) {
         dish.setCategory(newCategory);
     }
-
 
     public void updateDishType(Dish dish, DishType dishType) {
         dish.setCuisineType(dishType);
