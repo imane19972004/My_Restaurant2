@@ -78,7 +78,7 @@ public class RestaurantMapper {
                         DishCategory category = DishCategory.valueOf(dishDTO.getCategory());
                         lastDish.setCategory(category);
                     } catch (IllegalArgumentException e) {
-                        throw new IllegalArgumentException("Invalid category: " + dishDTO.getCategory(), e);
+                        throw new IllegalArgumentException("Invalid category: " + dishDTO.getCategory());
                     }
                 }
             });

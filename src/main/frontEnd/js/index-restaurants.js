@@ -31,8 +31,9 @@ async function loadRestaurants() {
         const url = `/api/restaurants?${params.toString()}`;
         console.log('Fetching:', url);
 
-        const displayUrl = `/?${params.toString()}`;
-        window.history.replaceState({ path: displayUrl }, '', displayUrl);
+        // Updates browser URL to reflect current filters
+        const displayUrl = `/api/restaurants?${params.toString()}`;
+        window.history.pushState({ path: displayUrl }, '', displayUrl);
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -154,7 +155,8 @@ function loadFiltersFromURL() {
         document.getElementById('cuisine').value = params.get('cuisineType');
     }
     if (params.has('page')) {
-        currentPage = parseInt(params.get('page'));
+        const pageParam = parseInt(params.get('page'));
+        currentPage = Number.isNaN(pageParam) ? 1 : pageParam;
     }
 }
 

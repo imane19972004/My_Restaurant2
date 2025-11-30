@@ -15,6 +15,7 @@ import fr.unice.polytech.api.dto.RestaurantDTO;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -115,11 +116,21 @@ public class RestaurantHandler implements HttpHandler {
         LocalTime currentTime = now.toLocalTime();
         
         return restaurant.getOpeningHours().stream()
-                .anyMatch(hours -> 
-                    hours.getDay() == currentDay &&
-                    !currentTime.isBefore(hours.getOpeningTime()) &&
-                    currentTime.isBefore(hours.getClosingTime())
-                );
+                .anyMatch(hours -> {
+                    if (hours.getDay() != currentDay) {
+                        return false;
+                    }
+                    LocalTime opening = hours.getOpeningTime();
+                    LocalTime closing = hours.getClosingTime();
+                    if (closing.isAfter(opening) || closing.equals(opening)) {
+                        // Normal case: opening and closing on same day
+                        return !currentTime.isBefore(opening) && !currentTime.isAfter(closing);
+                    } else {
+                        // Overnight case: closing is after midnight
+                        return !currentTime.isBefore(opening) || !currentTime.isAfter(closing);
+                    }
+                });
+
     }
 
     private void handleGetRestaurantById(HttpExchange exchange) throws IOException {
@@ -170,7 +181,7 @@ public class RestaurantHandler implements HttpHandler {
 
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
-        byte[] bytes = response.getBytes();
+        byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(statusCode, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
