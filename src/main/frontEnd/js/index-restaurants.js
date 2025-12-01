@@ -47,7 +47,7 @@ async function loadRestaurants() {
 
     } catch (error) {
         console.error('Error loading restaurants:', error);
-        document.getElementById('restaurants-grid').innerHTML = 
+        document.getElementById('restaurants-grid').innerHTML =
             `<div class="error">Failed to load restaurants. Please try again later.</div>`;
     }
 }
@@ -72,6 +72,7 @@ function displayRestaurants(restaurants) {
         const cuisineType = restaurant.cuisineType || 'GENERAL';
         const cuisineBadgeClass = cuisineType.toLowerCase();
 
+        // ✅ FIX CRITIQUE : Utiliser restaurant.id directement (pas de hashCode)
         return `
             <div class="restaurant-card" onclick="goToRestaurantMenu(${restaurant.id})">
                 
@@ -137,20 +138,28 @@ function goToPage(page) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ✅ FIX PRINCIPAL : Aller directement à order.html
+// ✅ FIX PRINCIPAL : Navigation directe avec l'ID réel
 window.goToRestaurantMenu = function(restaurantId) {
     console.log('🍽️ Navigation vers le menu du restaurant ID:', restaurantId);
-    
-    // Sauvegarder l'ID dans sessionStorage
-    sessionStorage.setItem('selectedRestaurantId', restaurantId);
-    
+
+    // ✅ CRITIQUE : Vérifier que l'ID est valide
+    if (!restaurantId || restaurantId === 0) {
+        console.error('❌ ID de restaurant invalide:', restaurantId);
+        alert('Erreur: ID de restaurant invalide');
+        return;
+    }
+
+    // Sauvegarder l'ID dans sessionStorage (ID RÉEL, pas hashCode)
+    sessionStorage.setItem('selectedRestaurantId', restaurantId.toString());
+    console.log('💾 ID sauvegardé:', restaurantId);
+
     // ✅ Redirection directe vers order.html
     window.location.href = `/order.html`;
 }
 
 function loadFiltersFromURL() {
     const params = new URLSearchParams(window.location.search);
-    
+
     if (params.has('availableNow')) {
         document.getElementById('availability').value = params.get('availableNow');
     }
@@ -167,6 +176,8 @@ function loadFiltersFromURL() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 Page index-restaurants.js chargée');
+
     loadFiltersFromURL();
     loadRestaurants();
 

@@ -20,12 +20,13 @@ public class RestaurantRepository {
 
     public RestaurantRepository() {
         seed();
+        System.out.println("📦 RestaurantRepository initialized with " + restaurants.size() + " restaurants");
     }
 
     private void seed() {
         // ====================== RESTAURANT 1 ======================
         RestaurantDTO r1 = new RestaurantDTO();
-        r1.setId(counter.getAndIncrement());
+        r1.setId(counter.getAndIncrement());  // ID = 1
         r1.setName("La Bella Vita");
         r1.setCuisineType(DishType.ITALIAN);
         r1.setPriceRange("€€");
@@ -55,7 +56,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 2 ======================
         RestaurantDTO r2 = new RestaurantDTO();
-        r2.setId(counter.getAndIncrement());
+        r2.setId(counter.getAndIncrement());  // ID = 2
         r2.setName("Sakura Sushi");
         r2.setCuisineType(DishType.JAPANESE);
         r2.setPriceRange("€€");
@@ -82,7 +83,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 3 ======================
         RestaurantDTO r3 = new RestaurantDTO();
-        r3.setId(counter.getAndIncrement());
+        r3.setId(counter.getAndIncrement());  // ID = 3
         r3.setName("El Sombrero");
         r3.setCuisineType(DishType.MEXICAN);
         r3.setPriceRange("€");
@@ -101,7 +102,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 4 ======================
         RestaurantDTO r4 = new RestaurantDTO();
-        r4.setId(counter.getAndIncrement());
+        r4.setId(counter.getAndIncrement());  // ID = 4
         r4.setName("Bombay Spice");
         r4.setCuisineType(DishType.INDIAN);
         r4.setPriceRange("€€€");
@@ -126,7 +127,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 5 ======================
         RestaurantDTO r5 = new RestaurantDTO();
-        r5.setId(counter.getAndIncrement());
+        r5.setId(counter.getAndIncrement());  // ID = 5
         r5.setName("Le Pain Doré");
         r5.setCuisineType(DishType.FRENCH);
         r5.setPriceRange("€€");
@@ -148,7 +149,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 6 ======================
         RestaurantDTO r6 = new RestaurantDTO();
-        r6.setId(counter.getAndIncrement());
+        r6.setId(counter.getAndIncrement());  // ID = 6
         r6.setName("Elios Crous");
         r6.setCuisineType(DishType.AMERICAN);
         r6.setPriceRange("€");
@@ -174,7 +175,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 7 ======================
         RestaurantDTO r7 = new RestaurantDTO();
-        r7.setId(counter.getAndIncrement());
+        r7.setId(counter.getAndIncrement());  // ID = 7
         r7.setName("Green Leaf Café");
         r7.setCuisineType(DishType.VEGETARIAN);
         r7.setPriceRange("€€");
@@ -196,7 +197,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 8 ======================
         RestaurantDTO r8 = new RestaurantDTO();
-        r8.setId(counter.getAndIncrement());
+        r8.setId(counter.getAndIncrement());  // ID = 8
         r8.setName("Dragon Wok");
         r8.setCuisineType(DishType.CHINESE);
         r8.setPriceRange("€€");
@@ -220,7 +221,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 9 ======================
         RestaurantDTO r9 = new RestaurantDTO();
-        r9.setId(counter.getAndIncrement());
+        r9.setId(counter.getAndIncrement());  // ID = 9
         r9.setName("Mediterraneo");
         r9.setCuisineType(DishType.MEDITERRANEAN);
         r9.setPriceRange("€€");
@@ -243,7 +244,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 10 ======================
         RestaurantDTO r10 = new RestaurantDTO();
-        r10.setId(counter.getAndIncrement());
+        r10.setId(counter.getAndIncrement());  // ID = 10
         r10.setName("Burger Time");
         r10.setCuisineType(DishType.AMERICAN);
         r10.setPriceRange("€");
@@ -265,7 +266,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 11 ======================
         RestaurantDTO r11 = new RestaurantDTO();
-        r11.setId(counter.getAndIncrement());
+        r11.setId(counter.getAndIncrement());  // ID = 11
         r11.setName("Pasta Fresca");
         r11.setCuisineType(DishType.ITALIAN);
         r11.setPriceRange("€€");
@@ -286,7 +287,7 @@ public class RestaurantRepository {
 
         // ====================== RESTAURANT 12 ======================
         RestaurantDTO r12 = new RestaurantDTO();
-        r12.setId(counter.getAndIncrement());
+        r12.setId(counter.getAndIncrement());  // ID = 12
         r12.setName("Curry Palace");
         r12.setCuisineType(DishType.INDIAN);
         r12.setPriceRange("€€");
@@ -324,13 +325,24 @@ public class RestaurantRepository {
     }
 
     public List<RestaurantDTO> findAll() {
+        System.out.println("📋 RestaurantRepository.findAll() returning " + restaurants.size() + " restaurants");
         return restaurants;
     }
 
     public RestaurantDTO findById(long id) {
-        return restaurants.stream()
+        System.out.println("🔍 RestaurantRepository.findById(" + id + ")");
+        RestaurantDTO found = restaurants.stream()
                 .filter(r -> r.getId() == id)
                 .findFirst()
                 .orElse(null);
+
+        if (found != null) {
+            System.out.println("✅ Found restaurant: " + found.getName() + " with " + found.getDishes().size() + " dishes");
+        } else {
+            System.err.println("❌ Restaurant not found with ID: " + id);
+            System.out.println("Available IDs: " + restaurants.stream().map(r -> r.getId()).toList());
+        }
+
+        return found;
     }
 }
