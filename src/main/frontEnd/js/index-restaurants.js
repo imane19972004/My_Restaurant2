@@ -31,7 +31,6 @@ async function loadRestaurants() {
         const url = `/api/restaurants?${params.toString()}`;
         console.log('Fetching:', url);
 
-        // Updates browser URL to reflect current filters
         const displayUrl = `/api/restaurants?${params.toString()}`;
         window.history.pushState({ path: displayUrl }, '', displayUrl);
 
@@ -74,7 +73,7 @@ function displayRestaurants(restaurants) {
         const cuisineBadgeClass = cuisineType.toLowerCase();
 
         return `
-            <div class="restaurant-card" onclick="goToRestaurant(${restaurant.id})">
+            <div class="restaurant-card" onclick="goToRestaurantMenu(${restaurant.id})">
                 
                 <div class="restaurant-header">
                     <h3>${escapeHtml(restaurant.name)}</h3>
@@ -138,8 +137,15 @@ function goToPage(page) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-window.goToRestaurant = function(restaurantId) {
-    window.location.href = `/restaurant.html?id=${restaurantId}`;
+// ✅ FIX PRINCIPAL : Aller directement à order.html
+window.goToRestaurantMenu = function(restaurantId) {
+    console.log('🍽️ Navigation vers le menu du restaurant ID:', restaurantId);
+    
+    // Sauvegarder l'ID dans sessionStorage
+    sessionStorage.setItem('selectedRestaurantId', restaurantId);
+    
+    // ✅ Redirection directe vers order.html
+    window.location.href = `/order.html`;
 }
 
 function loadFiltersFromURL() {

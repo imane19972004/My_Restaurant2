@@ -2,51 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Order</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script defer src="js/api.js"></script>
-    <script defer src="js/order.js"></script>
+    <title>Order - Your Order</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script defer src="/js/api.js"></script>
+    <script defer src="/js/order.js"></script>
 </head>
 <body>
 <header>
     <h1>🍱 Your Order</h1>
     <nav>
-        <a href="restaurants.html">← Back to Restaurants</a>
+        <a href="index.html">← Back to Restaurants</a>
     </nav>
 </header>
 
-<main>
-    <!-- 🔹 Menu Section -->
-    <section id="menu">
-        <p>Loading menu...</p>
+<main style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; max-width: 1400px; margin: 2rem auto; padding: 0 2rem;">
+
+    <!-- 🔹 Menu Section (Gauche) -->
+    <section id="menu" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <p style="text-align: center; color: #999;">Chargement du menu...</p>
     </section>
 
-    <!-- 🔹 Toppings Section (hidden by default) -->
-    <div id="toppings-section" class="hidden">
-        <h3>Choose your toppings</h3>
-        <div id="toppings-list"></div>
-        <button id="add-with-toppings">Add to Cart</button>
-    </div>
+    <!-- 🔹 Panier + Livraison (Droite) -->
+    <aside>
+        <section id="cart" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 20px;">
+            <h2 style="color: var(--primary); margin-bottom: 1rem;">🛒 Cart</h2>
+            <ul id="cart-list" style="list-style: none; padding: 0; margin: 0 0 1rem 0; max-height: 300px; overflow-y: auto;">
+                <li style="text-align: center; color: #999; padding: 2rem;">Panier vide</li>
+            </ul>
 
-    <!-- 🔹 Cart -->
-    <section id="cart">
-        <h2>Cart</h2>
-        <ul id="cart-list"></ul>
-        <p>Total: <span id="total">0</span> €</p>
+            <div style="padding: 1rem; background: #f9f9f9; border-radius: 8px; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600;">Total:</span>
+                    <span id="total" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">0.00</span>
+                    <span style="font-weight: bold;">€</span>
+                </div>
+            </div>
 
-        <!-- 🔹 Delivery -->
-        <section id="delivery">
-            <h3>Choose a delivery time</h3>
-            <select id="delivery-slot">
-                <option>Loading delivery slots...</option>
-            </select>
+            <!-- 🔹 Delivery Section -->
+            <section id="delivery" style="margin: 1.5rem 0; padding: 1rem; background: #f0f8ff; border-radius: 8px;">
+                <h3 style="color: var(--primary); margin-bottom: 0.75rem; font-size: 1rem;">🕐 Delivery Time</h3>
+                <select id="delivery-slot" style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                    <option value="">-- Choose a time slot --</option>
+                </select>
+            </section>
+
+            <button id="btn-confirm" class="btn" style="width: 100%; padding: 1rem; font-size: 1.1rem;" disabled>
+                Confirm Order
+            </button>
         </section>
-
-        <button id="btn-confirm">Confirm Order</button>
-    </section>
+    </aside>
 </main>
 
-<footer>
+<!-- 🔹 Toppings Section (caché par défaut) -->
+<div id="toppings-section" class="hidden" style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); max-width: 400px; z-index: 1000;">
+    <h3 style="margin: 0 0 1rem 0; color: var(--primary);">Choose your toppings</h3>
+    <div id="toppings-list"></div>
+    <button id="add-with-toppings" class="btn" style="width: 100%; margin-top: 1rem;">Add to Cart</button>
+</div>
+
+<footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem; margin-top: 4rem;">
     <p>© 2025 - Online Meal Ordering Service</p>
 </footer>
 </body>
