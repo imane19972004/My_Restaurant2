@@ -53,11 +53,20 @@
     </aside>
 </main>
 
-<!-- 🔹 Toppings Section (caché par défaut) -->
-<div id="toppings-section" class="hidden" style="position: fixed; bottom: 20px; right: 20px; background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); max-width: 400px; z-index: 1000;">
-    <h3 style="margin: 0 0 1rem 0; color: var(--primary);">Choose your toppings</h3>
-    <div id="toppings-list"></div>
-    <button id="add-with-toppings" class="btn" style="width: 100%; margin-top: 1rem;">Add to Card</button>
+<!-- 🔹 Toppings Section (Modal) -->
+<div id="toppings-section" class="hidden">
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0;">🍕 Choose your toppings</h3>
+            <button onclick="closeToppingsModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;">
+                ✕
+            </button>
+        </div>
+        <div id="toppings-list" style="margin-bottom: 1.5rem;"></div>
+        <button id="add-with-toppings" class="btn" style="width: 100%; padding: 1rem; font-size: 1rem; font-weight: bold;">
+            ✅ Add to Card
+        </button>
+    </div>
 </div>
 
 <footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem; margin-top: 4rem;">

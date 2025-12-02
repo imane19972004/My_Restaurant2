@@ -627,8 +627,27 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+// ========== FERMER LA MODAL DES TOPPINGS ==========
+function closeToppingsModal() {
+    const toppingsSection = document.getElementById('toppings-section');
+    if (toppingsSection) {
+        toppingsSection.classList.add('hidden');
+        // Décocher toutes les cases
+        document.querySelectorAll('.topping-checkbox').forEach(cb => cb.checked = false);
+    }
+}
+
+// Fermer la modal en cliquant sur le fond sombre
+document.addEventListener('click', (e) => {
+    const toppingsSection = document.getElementById('toppings-section');
+    if (e.target === toppingsSection && !toppingsSection.classList.contains('hidden')) {
+        closeToppingsModal();
+    }
+});
+
 window.selectDishWithToppings = selectDishWithToppings;
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.closePaymentModal = closePaymentModal;
 window.processPayment = processPayment;
+window.closeToppingsModal = closeToppingsModal;
