@@ -1,45 +1,25 @@
 package fr.unice.polytech.services.order.handlers;
 
-
 import fr.unice.polytech.utils.ETagGenerator;
-
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import fr.unice.polytech.api.dto.RestaurantDTO;
 import fr.unice.polytech.api.dto.TimeSlotDTO;
-import fr.unice.polytech.restaurants.Restaurant;
-import fr.unice.polytech.restaurants.RestaurantManager;
-import fr.unice.polytech.restaurants.TimeSlot;
-import fr.unice.polytech.services.order.mappers.OrderMapper;
+import fr.unice.polytech.services.shared.DataApiClient;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
-import java.time.DayOfWeek;
-import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
-import java.util.ArrayList;
 /**
- * Handler for TimeSlot endpoints
- * 
- * GET /api/timeslots?restaurantId={id}
- * 
- * TD requirement: "visualisant les heures de livraisons possibles 
- * qui évoluent en fonction de la commande et des autres commandes"
+ * ✅ Récupère les TimeSlots STOCKÉS dans le restaurant (avec capacités réelles)
  */
 public class TimeSlotHandler implements HttpHandler {
     
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final RestaurantManager restaurantManager;
-    
-    public TimeSlotHandler(RestaurantManager restaurantManager) {
-        this.restaurantManager = restaurantManager;
-    }
+    private final DataApiClient dataApi = new DataApiClient("http://localhost:8090");
     
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -57,7 +37,6 @@ public class TimeSlotHandler implements HttpHandler {
         }
     }
 
-
     private void handleGetTimeSlots(HttpExchange exchange) throws IOException {
         URI uri = exchange.getRequestURI();
         Map<String, String> queryParams = parseQueryParams(uri.getQuery());
@@ -71,26 +50,34 @@ public class TimeSlotHandler implements HttpHandler {
         try {
             long restaurantId = Long.parseLong(restaurantIdStr);
 
-            //  NOUVEAU : Générer des créneaux horaires MOCK basés sur l'ID du restaurant
-            // (Comme on n'a pas de vraie gestion de créneaux, on en génère des faux)
-            List<TimeSlotDTO> mockSlots = generateMockTimeSlots(restaurantId);
+            // ✅ RÉCUPÉRER LE RESTAURANT DEPUIS LE DATA SERVICE
+            RestaurantDTO restaurant = dataApi.get("/data/restaurants/" + restaurantId, RestaurantDTO.class);
+            
+            if (restaurant == null) {
+                sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
+                return;
+            }
 
-            String jsonResponse = objectMapper.writeValueAsString(mockSlots);
+            // ✅ RÉCUPÉRER LES TIMESLOTS DÉJÀ STOCKÉS DANS LE RESTAURANT
+            List<TimeSlotDTO> slots = restaurant.getTimeSlots();
+            
+            if (slots == null || slots.isEmpty()) {
+                System.out.println("⚠️ Aucun TimeSlot défini pour le restaurant " + restaurant.getName());
+                slots = new ArrayList<>();
+            }
 
-            // Générer ETag
+            System.out.println("✅ " + slots.size() + " créneaux trouvés pour " + restaurant.getName());
+
+            String jsonResponse = objectMapper.writeValueAsString(slots);
             String etag = ETagGenerator.generateETag(jsonResponse);
-
-            // Vérifier If-None-Match
             String ifNoneMatch = exchange.getRequestHeaders().getFirst("If-None-Match");
 
             if (ifNoneMatch != null && ifNoneMatch.equals(etag)) {
-                System.out.println(" ETag match → 304 Not Modified (timeslots)");
                 exchange.getResponseHeaders().set("ETag", etag);
                 exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
                 exchange.sendResponseHeaders(304, -1);
                 exchange.close();
             } else {
-                System.out.println(" New timeslots → 200 OK with ETag: " + etag);
                 sendResponseWithETag(exchange, 200, jsonResponse, etag);
             }
 
@@ -102,19 +89,12 @@ public class TimeSlotHandler implements HttpHandler {
         }
     }
 
-
-
-    /**
-     * Send HTTP response with ETag header
-     */
     private void sendResponseWithETag(HttpExchange exchange, int statusCode, String response, String etag) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.getResponseHeaders().set("ETag", etag);
         
         if (statusCode == 200) {
             exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
-            System.out.println(" Cache-Control header ajouté : public, max-age=60");
-            System.out.println(" ETag header ajouté : " + etag);
         } else {
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
         }
@@ -144,14 +124,10 @@ public class TimeSlotHandler implements HttpHandler {
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         
-        //  NOUVEAU : Ajouter Cache-Control header
         if (statusCode == 200) {
-            // Cache les créneaux pendant 1 minute (60 secondes) - plus dynamique
             exchange.getResponseHeaders().set("Cache-Control", "public, max-age=60");
-            System.out.println(" Cache-Control header ajouté : public, max-age=60");
         } else {
             exchange.getResponseHeaders().set("Cache-Control", "no-store");
-            System.out.println("Cache-Control header ajouté : no-store (erreur)");
         }
         
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
@@ -160,30 +136,4 @@ public class TimeSlotHandler implements HttpHandler {
             os.write(response.getBytes());
         }
     }
-
-
-    /**
-     * Génère des créneaux horaires MOCK pour les tests
-     */
-    private List<TimeSlotDTO> generateMockTimeSlots(long restaurantId) {
-        List<TimeSlotDTO> slots = new ArrayList<>();
-
-        // Générer 5 créneaux de 30 minutes chacun
-        LocalTime startTime = LocalTime.of(12, 0);
-
-        for (int i = 0; i < 5; i++) {
-            TimeSlotDTO slot = new TimeSlotDTO();
-            slot.setStartTime(startTime.toString());
-            slot.setEndTime(startTime.plusMinutes(30).toString());
-            slot.setAvailableCapacity(10); // Capacité fixe pour les tests
-            slot.setDayOfWeek("MONDAY"); // Jour par défaut
-
-            slots.add(slot);
-            startTime = startTime.plusMinutes(30);
-        }
-
-        return slots;
-    }
-
-
 }
