@@ -22,28 +22,34 @@ public class RestaurantDataHandler implements HttpHandler {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
+        System.out.println("📦 DataService received: " + method + " " + path);
+
         if (!method.equals("GET")) {
             send(exchange, 405, "{\"error\":\"Method not allowed\"}");
             return;
         }
 
-        // ✅ GET /data/restaurants/{id}
-        if (path.matches("/data/restaurants/\\d+")) {
+        // GET /data/restaurants/{id}
+        if (path.matches("/data/restaurants/-?\\d+")) {
             try {
-                long id = Long.parseLong(path.substring(path.lastIndexOf("/") + 1));
+                String idStr = path.substring(path.lastIndexOf("/") + 1);
+                long id = Long.parseLong(idStr);
+
                 RestaurantDTO dto = repository.findById(id);
 
                 if (dto == null) {
-                    // ✅ CRITIQUE : Retourner 404 si restaurant introuvable
+                    System.err.println("❌ DataService: Restaurant not found for ID: " + id);
                     send(exchange, 404, "{\"error\":\"Restaurant not found\"}");
                     return;
                 }
 
+                System.out.println("✅ DataService: Found restaurant: " + dto.getName() + " with " +
+                        (dto.getDishes() != null ? dto.getDishes().size() : 0) + " dishes");
+
                 send(exchange, 200, mapper.writeValueAsString(dto));
 
             } catch (NumberFormatException e) {
-                // ✅ CRITIQUE : ID invalide → 404
-                send(exchange, 404, "{\"error\":\"Invalid restaurant ID format\"}");
+                send(exchange, 404, "{\"error\":\"Invalid restaurant ID\"}");
             } catch (Exception e) {
                 e.printStackTrace();
                 send(exchange, 500, "{\"error\":\"Internal server error\"}");
@@ -51,7 +57,7 @@ public class RestaurantDataHandler implements HttpHandler {
             return;
         }
 
-        // ✅ GET /data/restaurants (all)
+        // GET /data/restaurants (all)
         try {
             send(exchange, 200, mapper.writeValueAsString(repository.findAll()));
         } catch (Exception e) {

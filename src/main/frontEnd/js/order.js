@@ -77,12 +77,12 @@ function displayMenu(restaurant) {
     // Ordre d'affichage des catégories
     const categoryOrder = ['STARTER', 'MAIN_COURSE', 'SIDE', 'DESSERT', 'DRINK', 'OTHER'];
     const categoryNames = {
-        'STARTER': '🥗 Entrées',
-        'MAIN_COURSE': '🍽️ Plats Principaux',
-        'SIDE': '🍟 Accompagnements',
+        'STARTER': '🥗 Starters',
+        'MAIN_COURSE': '🍽️ Main courses',
+        'SIDE': '🍟 Sides',
         'DESSERT': '🍰 Desserts',
-        'DRINK': '🥤 Boissons',
-        'OTHER': '📦 Autres'
+        'DRINK': '🥤 Drinks',
+        'OTHER': '📦 others'
     };
 
     menuContainer.innerHTML = `
@@ -116,13 +116,13 @@ function displayMenu(restaurant) {
                                     </p>
                                 ` : ''}
                                 ${dish.toppings && dish.toppings.length > 0
-            ? `<button onclick='selectDishWithToppings(${JSON.stringify(dish).replace(/'/g, "\\'")})'
+            ? `<button onclick='selectDishWithToppings(${JSON.stringify(sanitizeDish(dish)).replace(/'/g, "\\'")})'
                                          class="btn" style="width: 100%;">
-                                         ➕ Ajouter avec options
+                                         ➕ Add with toppings
                                        </button>`
-            : `<button onclick='addToCart(${JSON.stringify(dish).replace(/'/g, "\\'")})'
+            : `<button onclick='addToCart(${JSON.stringify(sanitizeDish(dish)).replace(/'/g, "\\'")})'
                                          class="btn" style="width: 100%;">
-                                         ➕ Ajouter au panier
+                                         ➕ Add to card
                                        </button>`
         }
                             </div>
@@ -134,6 +134,33 @@ function displayMenu(restaurant) {
     `;
 
     console.log('✅ Menu affiché avec', restaurant.dishes.length, 'plats');
+}
+
+// ========== ✅ NOUVELLE FONCTION : Nettoyer les données pour JSON ==========
+function sanitizeDish(dish) {
+    return {
+        id: dish.id,
+        name: cleanString(dish.name),
+        description: cleanString(dish.description),
+        price: dish.price,
+        category: dish.category,
+        dishType: dish.dishType,
+        toppings: dish.toppings ? dish.toppings.map(t => ({
+            name: cleanString(t.name),
+            price: t.price
+        })) : []
+    };
+}
+
+// ========== ✅ FONCTION : Nettoyer les chaînes (supprimer caractères invalides) ==========
+function cleanString(str) {
+    if (!str) return '';
+    // Supprimer les caractères de contrôle (0x00-0x1F sauf tab, newline, carriage return)
+    return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/\n/g, ' ')  // Remplacer newline par espace
+        .replace(/\r/g, ' ')  // Remplacer carriage return par espace
+        .replace(/\t/g, ' ')  // Remplacer tab par espace
+        .trim();
 }
 
 // ========== GESTION DES TOPPINGS ==========
@@ -171,20 +198,17 @@ function addToCart(dish, selectedToppings = []) {
     cart.push({
         ...dish,
         selectedToppings: selectedToppings,
-        itemId: Date.now() + Math.random() // Identifiant unique pour chaque article
+        itemId: Date.now() + Math.random()
     });
 
     updateCartDisplay();
 
-    // Masquer la section toppings
     const toppingsSection = document.getElementById('toppings-section');
     if (toppingsSection) {
         toppingsSection.classList.add('hidden');
     }
 
-    // Feedback visuel
     showToast('✅ Ajouté au panier: ' + dish.name);
-
     console.log('✅ Panier mis à jour. Total:', cart.length, 'articles');
 }
 
@@ -200,7 +224,7 @@ function updateCartDisplay() {
     }
 
     if (cart.length === 0) {
-        cartList.innerHTML = '<li style="color: #999; text-align: center; padding: 2rem;">Panier vide</li>';
+        cartList.innerHTML = '<li style="color: #999; text-align: center; padding: 2rem;">Empty card</li>';
         totalElement.textContent = '0.00';
         if (confirmBtn) confirmBtn.disabled = true;
         return;
@@ -222,9 +246,9 @@ function updateCartDisplay() {
                         <span style="color: var(--primary); font-weight: bold; margin-left: 0.5rem;">
                             ${itemTotal.toFixed(2)}€
                         </span>
-                        ${item.selectedToppings && item.selectedToppings.length > 0 
-                            ? `<br><small style="color: #666;">+ ${item.selectedToppings.map(t => escapeHtml(t.name)).join(', ')}</small>` 
-                            : ''}
+                        ${item.selectedToppings && item.selectedToppings.length > 0
+            ? `<br><small style="color: #666;">+ ${item.selectedToppings.map(t => escapeHtml(t.name)).join(', ')}</small>`
+            : ''}
                     </div>
                     <button onclick="removeFromCart(${index})" 
                             style="background: var(--error); color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">
@@ -272,12 +296,12 @@ function displayDeliverySlots(slots) {
     }
 
     if (!slots || slots.length === 0) {
-        select.innerHTML = '<option value="">Aucun créneau disponible</option>';
+        select.innerHTML = '<option value="">No available timeslot</option>';
         select.disabled = true;
         return;
     }
 
-    select.innerHTML = '<option value="">-- Choisir un créneau --</option>' +
+    select.innerHTML = '<option value="">-- Choose a timeslot --</option>' +
         slots.map(slot => `
             <option value="${slot.startTime}-${slot.endTime}" 
                     ${slot.availableCapacity === 0 ? 'disabled' : ''}>
@@ -294,7 +318,6 @@ function displayDeliverySlots(slots) {
 function setupEventListeners() {
     console.log('🔧 Configuration des événements...');
 
-    // Ajouter avec toppings
     const addWithToppingsBtn = document.getElementById('add-with-toppings');
     if (addWithToppingsBtn) {
         addWithToppingsBtn.addEventListener('click', () => {
@@ -304,7 +327,6 @@ function setupEventListeners() {
         });
     }
 
-    // Confirmer la commande
     const confirmBtn = document.getElementById('btn-confirm');
     if (confirmBtn) {
         confirmBtn.addEventListener('click', showPaymentModal);
@@ -317,7 +339,6 @@ function setupEventListeners() {
 function showPaymentModal() {
     console.log('💳 Affichage du modal de paiement');
 
-    // Validation
     if (cart.length === 0) {
         showToast('⚠️ Votre panier est vide !');
         return;
@@ -335,7 +356,6 @@ function showPaymentModal() {
         return sum + item.price + toppingsPrice;
     }, 0);
 
-    // Créer le modal
     const modal = document.createElement('div');
     modal.id = 'payment-modal';
     modal.style.cssText = `
@@ -379,7 +399,7 @@ function showPaymentModal() {
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
                     Numéro de carte:
                 </label>
-                <input type="text" id="card-number" placeholder="1234 5678 9012 3456" maxlength="19"
+                <input type="text" id="card-number" placeholder="1234 5634 5666 6" maxlength="19"
                        style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem;">
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -387,14 +407,14 @@ function showPaymentModal() {
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
                             Expiration (MM/AA):
                         </label>
-                        <input type="text" id="card-expiry" placeholder="12/25" maxlength="5"
+                        <input type="text" id="card-expiry" placeholder="12/09" maxlength="5"
                                style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
                             CVV:
                         </label>
-                        <input type="text" id="card-cvv" placeholder="123" maxlength="3"
+                        <input type="text" id="card-cvv" placeholder="133" maxlength="3"
                                style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
                     </div>
                 </div>
@@ -418,7 +438,6 @@ function showPaymentModal() {
 
     document.body.appendChild(modal);
 
-    // Event listeners pour le modal
     const paymentMethodSelect = document.getElementById('payment-method');
     const cardDetails = document.getElementById('card-details');
 
@@ -430,14 +449,12 @@ function showPaymentModal() {
         }
     });
 
-    // Formater le numéro de carte
     document.getElementById('card-number')?.addEventListener('input', (e) => {
         let value = e.target.value.replace(/\s/g, '');
         let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
         e.target.value = formattedValue;
     });
 
-    // Formater l'expiration
     document.getElementById('card-expiry')?.addEventListener('input', (e) => {
         let value = e.target.value.replace(/\D/g, '');
         if (value.length >= 2) {
@@ -462,13 +479,11 @@ async function processPayment() {
     const errorDiv = document.getElementById('payment-error');
     const processBtn = document.getElementById('process-payment-btn');
 
-    // Reset error
     if (errorDiv) {
         errorDiv.style.display = 'none';
         errorDiv.textContent = '';
     }
 
-    // Validation
     if (!paymentMethod) {
         showPaymentError('Veuillez sélectionner une méthode de paiement');
         return;
@@ -495,22 +510,22 @@ async function processPayment() {
         }
     }
 
-    // Désactiver le bouton
     if (processBtn) {
         processBtn.disabled = true;
         processBtn.textContent = '⏳ Traitement en cours...';
     }
 
     try {
-        // Étape 1: Créer la commande
         const deliverySlot = document.getElementById('delivery-slot')?.value;
+
+        // ✅ FIX : Nettoyer les données avant envoi
         const orderData = {
             restaurantId: selectedRestaurant.id,
             dishes: cart.map(item => ({
-                name: item.name,
+                name: cleanString(item.name),
                 price: item.price + (item.selectedToppings?.reduce((s, t) => s + t.price, 0) || 0)
             })),
-            deliveryLocation: "Campus Sophia", // À adapter selon vos besoins
+            deliveryLocation: "Campus Sophia",
             timeSlot: deliverySlot
         };
 
@@ -520,7 +535,6 @@ async function processPayment() {
 
         console.log('✅ Commande créée avec ID:', currentOrderId);
 
-        // Étape 2: Traiter le paiement
         console.log('📤 Traitement du paiement...');
         const paymentData = {
             orderId: currentOrderId,
@@ -530,7 +544,6 @@ async function processPayment() {
         const paymentResult = await API.processPayment(paymentData);
         console.log('✅ Paiement traité:', paymentResult);
 
-        // Étape 3: Redirection vers la confirmation
         if (paymentResult.status === 'VALIDATED') {
             sessionStorage.setItem('lastOrder', JSON.stringify({
                 orderId: currentOrderId,
@@ -584,7 +597,6 @@ function showError(title, message) {
 }
 
 function showToast(message) {
-    // Créer un toast simple
     const toast = document.createElement('div');
     toast.textContent = message;
     toast.style.cssText = `
@@ -615,7 +627,6 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-// Exposer les fonctions globalement
 window.selectDishWithToppings = selectDishWithToppings;
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;

@@ -14,18 +14,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *  NOUVELLE VERSION : Utilise DataService au lieu de OrderManager
- */
 public class PaymentHandler implements HttpHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final DataApiClient dataApi = new DataApiClient("http://localhost:8090");
 
-    // Constructeur pour compatibilité (mais non utilisé)
-    public PaymentHandler(Object orderManager) {
-        // orderManager n'est plus nécessaire avec DataService
-    }
+    public PaymentHandler(Object orderManager) {}
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -49,16 +43,14 @@ public class PaymentHandler implements HttpHandler {
 
         JsonNode jsonNode = objectMapper.readTree(body);
 
-        // Validation des champs requis
         if (!jsonNode.has("orderId") || !jsonNode.has("paymentMethod")) {
-            sendResponse(exchange, 400, "{\"error\": \"Order ID and payment method are required\"}");
+            sendResponse(exchange, 400, "{\"error\": \"Order ID and payment method required\"}");
             return;
         }
 
         long orderId = jsonNode.get("orderId").asLong();
         String paymentMethodStr = jsonNode.get("paymentMethod").asText();
 
-        //  FIX 1 : Récupérer la commande depuis DataService
         OrderDTO order;
         try {
             order = dataApi.get("/data/orders/" + orderId, OrderDTO.class);
@@ -67,26 +59,21 @@ public class PaymentHandler implements HttpHandler {
             return;
         }
 
-        //  FIX 2 : Vérifier que la commande est en attente
         if (!"PENDING".equals(order.getStatus())) {
-            sendResponse(exchange, 400, "{\"error\": \"Order is not pending. Current status: " + order.getStatus() + "\"}");
+            sendResponse(exchange, 400, "{\"error\": \"Order is not pending\"}");
             return;
         }
 
-        //  FIX 3 : Simuler le traitement du paiement
         boolean paymentSuccess = simulatePayment(paymentMethodStr);
 
-        //  FIX 4 : Mettre à jour le statut
         if (paymentSuccess) {
             order.setStatus("VALIDATED");
         } else {
             order.setStatus("CANCELED");
         }
 
-        //  FIX 5 : Sauvegarder la mise à jour dans DataService
         OrderDTO updatedOrder = dataApi.put("/data/orders/" + orderId, order, OrderDTO.class);
 
-        // Construire la réponse
         Map<String, Object> response = new HashMap<>();
         response.put("orderId", updatedOrder.getId());
         response.put("status", updatedOrder.getStatus());
@@ -101,16 +88,11 @@ public class PaymentHandler implements HttpHandler {
         sendResponse(exchange, statusCode, jsonResponse);
     }
 
-    /**
-     * Simule le traitement du paiement
-     */
     private boolean simulatePayment(String paymentMethod) {
-        // INTERNAL : toujours réussi (pour les tests)
         if ("INTERNAL".equalsIgnoreCase(paymentMethod)) {
             return true;
         }
 
-        // EXTERNAL : 80% de réussite
         if ("EXTERNAL".equalsIgnoreCase(paymentMethod)) {
             return Math.random() < 0.8;
         }

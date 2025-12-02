@@ -2,8 +2,6 @@ package fr.unice.polytech.services.catalog.handlers;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import fr.unice.polytech.restaurants.Restaurant;
-import fr.unice.polytech.services.catalog.mappers.RestaurantMapper;
 import fr.unice.polytech.services.shared.DataApiClient;
 import fr.unice.polytech.utils.ETagGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +31,7 @@ public class RestaurantHandler implements HttpHandler {
 
         try {
             if ("GET".equals(method)) {
-                if (path.matches("/api/restaurants/\\d+") || path.matches("/api/restaurants/-?\\d+")) {
+                if (path.matches("/api/restaurants/-?\\d+")) {
                     handleGetRestaurantById(exchange);
                 } else {
                     handleGetRestaurants(exchange);
@@ -54,56 +52,39 @@ public class RestaurantHandler implements HttpHandler {
         int page = Integer.parseInt(queryParams.getOrDefault("page", "1"));
         int limit = Integer.parseInt(queryParams.getOrDefault("limit", "10"));
 
-        // ✅ Récupérer les DTOs depuis DataService
         List<RestaurantDTO> allDtos = List.of(dataApi.get("/data/restaurants", RestaurantDTO[].class));
-
-        // ✅ Convertir en objets domaine UNIQUEMENT pour le filtrage
-        List<Restaurant> restaurants = allDtos.stream()
-                .map(RestaurantMapper::fromDTO)
-                .collect(Collectors.toList());
+        List<RestaurantDTO> filtered = allDtos;
 
         if (queryParams.containsKey("cuisineType")) {
             String cuisineType = queryParams.get("cuisineType");
-            restaurants = restaurants.stream()
-                    .filter(r -> r.getCuisineType().toString().equalsIgnoreCase(cuisineType))
+            filtered = filtered.stream()
+                    .filter(r -> r.getCuisineType() != null &&
+                            r.getCuisineType().toString().equalsIgnoreCase(cuisineType))
                     .collect(Collectors.toList());
         }
 
         if (queryParams.containsKey("category")) {
             String category = queryParams.get("category");
-            restaurants = restaurants.stream()
-                    .filter(r -> r.getDishes().stream()
+            filtered = filtered.stream()
+                    .filter(r -> r.getDishes() != null && r.getDishes().stream()
                             .anyMatch(dish -> dish.getCategory() != null &&
-                                    dish.getCategory().toString().equalsIgnoreCase(category)))
+                                    dish.getCategory().equalsIgnoreCase(category)))
                     .collect(Collectors.toList());
         }
 
         if (queryParams.containsKey("availableNow") && "true".equalsIgnoreCase(queryParams.get("availableNow"))) {
-            restaurants = restaurants.stream()
+            filtered = filtered.stream()
                     .filter(this::isCurrentlyOpen)
                     .collect(Collectors.toList());
         }
 
-        int totalItems = restaurants.size();
+        int totalItems = filtered.size();
         int startIndex = Math.max((page - 1) * limit, 0);
         int endIndex = Math.min(startIndex + limit, totalItems);
 
-        List<Restaurant> paginated = restaurants.subList(startIndex, endIndex);
+        List<RestaurantDTO> paginated = filtered.subList(startIndex, endIndex);
 
-        // ✅ ATTENTION : On reconvertit en DTO, ce qui perd les IDs originaux !
-        // ✅ FIX : Garder les DTOs originaux au lieu de reconvertir
-        List<RestaurantDTO> paginatedDTO = new ArrayList<>();
-        for (Restaurant r : paginated) {
-            // Retrouver le DTO original qui correspond à ce restaurant
-            RestaurantDTO originalDTO = allDtos.stream()
-                    .filter(dto -> dto.getName().equals(r.getRestaurantName()))
-                    .findFirst()
-                    .orElse(RestaurantMapper.toDTO(r)); // Fallback
-
-            paginatedDTO.add(originalDTO);
-        }
-
-        PaginatedResponseDTO<RestaurantDTO> response = new PaginatedResponseDTO<>(paginatedDTO, page, limit, totalItems);
+        PaginatedResponseDTO<RestaurantDTO> response = new PaginatedResponseDTO<>(paginated, page, limit, totalItems);
         String json = objectMapper.writeValueAsString(response);
 
         String etag = ETagGenerator.generateETag(json);
@@ -118,7 +99,7 @@ public class RestaurantHandler implements HttpHandler {
         sendResponseWithETag(exchange, 200, json, etag);
     }
 
-    private boolean isCurrentlyOpen(Restaurant restaurant) {
+    private boolean isCurrentlyOpen(RestaurantDTO restaurant) {
         if (restaurant.getOpeningHours() == null || restaurant.getOpeningHours().isEmpty()) {
             return false;
         }
@@ -129,15 +110,20 @@ public class RestaurantHandler implements HttpHandler {
 
         return restaurant.getOpeningHours().stream()
                 .anyMatch(hours -> {
-                    if (hours.getDay() != currentDay) {
+                    try {
+                        if (!DayOfWeek.valueOf(hours.getDay()).equals(currentDay)) {
+                            return false;
+                        }
+                        LocalTime opening = LocalTime.parse(hours.getOpeningTime());
+                        LocalTime closing = LocalTime.parse(hours.getClosingTime());
+
+                        if (closing.isAfter(opening) || closing.equals(opening)) {
+                            return !currentTime.isBefore(opening) && !currentTime.isAfter(closing);
+                        } else {
+                            return !currentTime.isBefore(opening) || !currentTime.isAfter(closing);
+                        }
+                    } catch (Exception e) {
                         return false;
-                    }
-                    LocalTime opening = hours.getOpeningTime();
-                    LocalTime closing = hours.getClosingTime();
-                    if (closing.isAfter(opening) || closing.equals(opening)) {
-                        return !currentTime.isBefore(opening) && !currentTime.isAfter(closing);
-                    } else {
-                        return !currentTime.isBefore(opening) || !currentTime.isAfter(closing);
                     }
                 });
     }
@@ -149,46 +135,22 @@ public class RestaurantHandler implements HttpHandler {
         try {
             long id = Long.parseLong(idStr);
 
-            System.out.println("🔍 RestaurantHandler: Fetching restaurant ID: " + id);
-
-            // ✅ RÉCUPÉRATION DEPUIS DataService
             RestaurantDTO dto = dataApi.get("/data/restaurants/" + id, RestaurantDTO.class);
 
             if (dto == null) {
-                System.err.println("❌ Restaurant not found in DataService for ID: " + id);
                 sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
                 return;
             }
 
-            // ✅ VÉRIFICATION ET LOG DES DONNÉES
-            System.out.println("✅ Restaurant found: " + dto.getName());
-            System.out.println("📋 Dishes count: " + (dto.getDishes() != null ? dto.getDishes().size() : 0));
+            if (dto.getId() == null) dto.setId(id);
+            if (dto.getDishes() == null) dto.setDishes(new ArrayList<>());
+            if (dto.getOpeningHours() == null) dto.setOpeningHours(new ArrayList<>());
 
-            // ✅ CRITIQUE : Initialiser TOUTES les propriétés si null
-            if (dto.getId() == null) {
-                dto.setId(id);
-            }
-
-            if (dto.getDishes() == null) {
-                System.out.println("⚠️ Dishes was null, initializing empty list");
-                dto.setDishes(new ArrayList<>());
-            }
-
-            if (dto.getOpeningHours() == null) {
-                System.out.println("⚠️ OpeningHours was null, initializing empty list");
-                dto.setOpeningHours(new ArrayList<>());
-            }
-
-            // ✅ VÉRIFIER et INITIALISER les toppings de chaque plat
             dto.getDishes().forEach(dish -> {
                 if (dish.getToppings() == null) {
-                    System.out.println("⚠️ Toppings was null for dish: " + dish.getName());
                     dish.setToppings(new ArrayList<>());
                 }
             });
-
-            // ✅ LOG FINAL AVANT SERIALIZATION
-            System.out.println("📤 Sending restaurant with " + dto.getDishes().size() + " dishes");
 
             String json = objectMapper.writeValueAsString(dto);
             String etag = ETagGenerator.generateETag(json);
@@ -203,16 +165,14 @@ public class RestaurantHandler implements HttpHandler {
             sendResponseWithETag(exchange, 200, json, etag);
 
         } catch (NumberFormatException e) {
-            System.err.println("❌ Invalid restaurant ID format: " + idStr);
-            sendResponse(exchange, 404, "{\"error\": \"Invalid restaurant ID format\"}");
+            sendResponse(exchange, 404, "{\"error\": \"Invalid restaurant ID\"}");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("❌ Error fetching restaurant: " + e.getMessage());
 
             if (e.getMessage() != null && (e.getMessage().contains("404") || e.getMessage().contains("not found"))) {
                 sendResponse(exchange, 404, "{\"error\": \"Restaurant not found\"}");
             } else {
-                sendResponse(exchange, 500, "{\"error\": \"Internal server error: " + e.getMessage() + "\"}");
+                sendResponse(exchange, 500, "{\"error\": \"Internal server error\"}");
             }
         }
     }

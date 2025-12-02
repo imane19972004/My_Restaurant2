@@ -1,7 +1,6 @@
 let currentPage = 1;
 let currentLimit = 9;
 
-// FONCTION SÉCURITÉ: Échappe les caractères HTML pour éviter XSS
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -18,21 +17,12 @@ async function loadRestaurants() {
         const categoryFilter = document.getElementById('category').value;
         const cuisineFilter = document.getElementById('cuisine').value;
 
-        if (availabilityFilter) {
-            params.append('availableNow', availabilityFilter);
-        }
-        if (categoryFilter) {
-            params.append('category', categoryFilter);
-        }
-        if (cuisineFilter) {
-            params.append('cuisineType', cuisineFilter);
-        }
+        if (availabilityFilter) params.append('availableNow', availabilityFilter);
+        if (categoryFilter) params.append('category', categoryFilter);
+        if (cuisineFilter) params.append('cuisineType', cuisineFilter);
 
         const url = `/api/restaurants?${params.toString()}`;
-        console.log('Fetching:', url);
-
-        const displayUrl = `/api/restaurants?${params.toString()}`;
-        window.history.pushState({ path: displayUrl }, '', displayUrl);
+        window.history.pushState({ path: url }, '', url);
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -40,15 +30,13 @@ async function loadRestaurants() {
         }
 
         const data = await response.json();
-        console.log('Received data:', data);
-
         displayRestaurants(data.data || []);
         displayPagination(data.page, data.totalItems, currentLimit);
 
     } catch (error) {
         console.error('Error loading restaurants:', error);
         document.getElementById('restaurants-grid').innerHTML =
-            `<div class="error">Failed to load restaurants. Please try again later.</div>`;
+            `<div class="error">Failed to load restaurants.</div>`;
     }
 }
 
@@ -56,7 +44,7 @@ function displayRestaurants(restaurants) {
     const grid = document.getElementById('restaurants-grid');
 
     if (!restaurants || restaurants.length === 0) {
-        grid.innerHTML = '<div class="no-results">No restaurants found with these filters.</div>';
+        grid.innerHTML = '<div class="no-results">No restaurants found.</div>';
         return;
     }
 
@@ -72,24 +60,19 @@ function displayRestaurants(restaurants) {
         const cuisineType = restaurant.cuisineType || 'GENERAL';
         const cuisineBadgeClass = cuisineType.toLowerCase();
 
-        // ✅ FIX CRITIQUE : Utiliser restaurant.id directement (pas de hashCode)
         return `
             <div class="restaurant-card" onclick="goToRestaurantMenu(${restaurant.id})">
-                
                 <div class="restaurant-header">
                     <h3>${escapeHtml(restaurant.name)}</h3>
                     <span class="cuisine-badge ${cuisineBadgeClass}">${escapeHtml(cuisineType)}</span>
                 </div>
-
                 <div class="restaurant-info">
                     <span class="dish-count">${dishes.length} dishes</span>
                 </div>
-
                 <div class="dishes-preview">
                     ${dishesHtml}
                     ${dishes.length > 4 ? `<div class="more-dishes">+${dishes.length - 4} more</div>` : ''}
                 </div>
-
             </div>
         `;
     }).join('');
@@ -138,22 +121,13 @@ function goToPage(page) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ✅ FIX PRINCIPAL : Navigation directe avec l'ID réel
 window.goToRestaurantMenu = function(restaurantId) {
-    console.log('🍽️ Navigation vers le menu du restaurant ID:', restaurantId);
-
-    // ✅ CRITIQUE : Vérifier que l'ID est valide
     if (!restaurantId || restaurantId === 0) {
-        console.error('❌ ID de restaurant invalide:', restaurantId);
-        alert('Erreur: ID de restaurant invalide');
+        console.error('Invalid restaurant ID:', restaurantId);
         return;
     }
 
-    // Sauvegarder l'ID dans sessionStorage (ID RÉEL, pas hashCode)
     sessionStorage.setItem('selectedRestaurantId', restaurantId.toString());
-    console.log('💾 ID sauvegardé:', restaurantId);
-
-    // ✅ Redirection directe vers order.html
     window.location.href = `/order.html`;
 }
 
@@ -170,14 +144,11 @@ function loadFiltersFromURL() {
         document.getElementById('cuisine').value = params.get('cuisineType');
     }
     if (params.has('page')) {
-        const pageParam = parseInt(params.get('page'));
-        currentPage = Number.isNaN(pageParam) ? 1 : pageParam;
+        currentPage = parseInt(params.get('page')) || 1;
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 Page index-restaurants.js chargée');
-
     loadFiltersFromURL();
     loadRestaurants();
 
