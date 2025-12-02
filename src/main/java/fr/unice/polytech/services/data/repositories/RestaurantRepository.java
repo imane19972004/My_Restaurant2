@@ -4,6 +4,7 @@ import fr.unice.polytech.api.dto.DishDTO;
 import fr.unice.polytech.api.dto.OpeningHoursDTO;
 import fr.unice.polytech.api.dto.RestaurantDTO;
 import fr.unice.polytech.api.dto.ToppingDTO;
+import fr.unice.polytech.api.dto.TimeSlotDTO;
 import fr.unice.polytech.dishes.DishType;
 import fr.unice.polytech.restaurants.EstablishmentType;
 import fr.unice.polytech.services.catalog.mappers.RestaurantMapper;
@@ -24,99 +25,107 @@ public class RestaurantRepository {
 
     public RestaurantRepository() {
         seed();
-        System.out.println("📦 RestaurantRepository initialized with " + restaurants.size() + " restaurants");
+        System.out.println(" RestaurantRepository initialized with " + restaurants.size() + " restaurants");
     }
 
     private void seed() {
+        System.out.println("🌱 Starting RestaurantRepository seed...");
+
         // ====================== RESTAURANT 1 ======================
+        System.out.println("\n Creating Restaurant 1: La Bella Vita");
         RestaurantDTO r1 = new RestaurantDTO();
-        r1.setId(counter.getAndIncrement());  // ID = 1
+        r1.setId(counter.getAndIncrement());
         r1.setName("La Bella Vita");
         r1.setCuisineType(DishType.ITALIAN);
-        r1.setPriceRange("€€");
+        r1.setPriceRange("MEDIUM");
         r1.setEstablishmentType(EstablishmentType.RESTAURANT);
         r1.setOpen(true);
 
-        // Créer le domaine pour les TimeSlots
+        //  CRÉER DOMAIN OBJECT ET AJOUTER TIMESLOTS
         Restaurant r1Domain = new Restaurant.Builder("La Bella Vita")
-            .withCuisineType(DishType.ITALIAN)
-            .build();
-        addTimeSlots(r1Domain, "11:30", "14:00", 5);  // Midi: capacité 5
-        addTimeSlots(r1Domain, "18:30", "22:00", 8);  // Soir: capacité 8
+                .withCuisineType(DishType.ITALIAN)
+                .build();
+
+        System.out.println("  ⏰ Adding TimeSlots for lunch...");
+        addTimeSlots(r1Domain, "11:30", "12:00", 5);
+        System.out.println("  ⏰ Adding TimeSlots for dinner...");
+        addTimeSlots(r1Domain, "10:00", "10:30", 8);
+
+        //  CONVERTIR DOMAIN -> DTO (avec TimeSlots)
+        System.out.println("   Converting domain to DTO...");
+        RestaurantDTO r1WithSlots = RestaurantMapper.toDTO(r1Domain);
+        r1.setTimeSlots(r1WithSlots.getTimeSlots());
+
+        System.out.println("   Restaurant 1 has " + r1.getTimeSlots().size() + " TimeSlots");
 
         List<DishDTO> r1Dishes = new ArrayList<>();
-        r1Dishes.add(createDish("Bruschetta", "Tomato, basil, garlic on toasted bread", 6.50, "STARTER", "ITALIAN",
-                Arrays.asList(new ToppingDTO("Extra Mozzarella", 1.50), new ToppingDTO("Prosciutto", 2.00))));
-        r1Dishes.add(createDish("Margherita Pizza", "Tomato sauce, mozzarella, basil", 12.50, "MAIN_COURSE", "ITALIAN",
-                Arrays.asList(new ToppingDTO("Extra Cheese", 1.50), new ToppingDTO("Olives", 0.80),
-                        new ToppingDTO("Mushrooms", 1.00), new ToppingDTO("Pepperoni", 2.00))));
-        r1Dishes.add(createDish("Pasta Carbonara", "Creamy bacon pasta with egg and parmesan", 14.00, "MAIN_COURSE", "ITALIAN",
-                Arrays.asList(new ToppingDTO("Extra Bacon", 2.50), new ToppingDTO("Extra Parmesan", 1.00))));
-        r1Dishes.add(createDish("Tiramisu", "Classic Italian coffee dessert", 6.00, "DESSERT", "ITALIAN", new ArrayList<>()));
+        r1Dishes.add(createDish("Bruschetta", "Tomato, basil, garlic", 6.50, "STARTER", "ITALIAN",
+                Arrays.asList(new ToppingDTO("Extra Mozzarella", 1.50))));
+        r1Dishes.add(createDish("Margherita Pizza", "Tomato, mozzarella, basil", 12.50, "MAIN_COURSE", "ITALIAN",
+                Arrays.asList(new ToppingDTO("Extra Cheese", 1.50), new ToppingDTO("Olives", 0.80))));
+        r1Dishes.add(createDish("Tiramisu", "Classic Italian dessert", 6.00, "DESSERT", "ITALIAN", new ArrayList<>()));
 
         r1.setDishes(r1Dishes);
         r1.setOpeningHours(Arrays.asList(
-                new OpeningHoursDTO("MONDAY", "11:30", "14:00"), new OpeningHoursDTO("MONDAY", "18:30", "22:00"),
-                new OpeningHoursDTO("TUESDAY", "11:30", "14:00"), new OpeningHoursDTO("TUESDAY", "18:30", "22:00"),
-                new OpeningHoursDTO("WEDNESDAY", "11:30", "14:00"), new OpeningHoursDTO("WEDNESDAY", "18:30", "22:00"),
-                new OpeningHoursDTO("THURSDAY", "11:30", "14:00"), new OpeningHoursDTO("THURSDAY", "18:30", "22:00"),
-                new OpeningHoursDTO("FRIDAY", "11:30", "14:00"), new OpeningHoursDTO("FRIDAY", "18:30", "23:00"),
-                new OpeningHoursDTO("SATURDAY", "18:30", "23:00")
+                new OpeningHoursDTO("MONDAY", "11:30", "14:00"),
+                new OpeningHoursDTO("MONDAY", "18:30", "22:00"),
+                new OpeningHoursDTO("TUESDAY", "11:30", "14:00"),
+                new OpeningHoursDTO("TUESDAY", "18:30", "22:00")
         ));
         restaurants.add(r1);
 
         // ====================== RESTAURANT 2 ======================
+        System.out.println("\n Creating Restaurant 2: Sakura Sushi");
         RestaurantDTO r2 = new RestaurantDTO();
-        r2.setId(counter.getAndIncrement());  // ID = 2
+        r2.setId(counter.getAndIncrement());
         r2.setName("Sakura Sushi");
         r2.setCuisineType(DishType.JAPANESE);
-        r2.setPriceRange("€€");
+        r2.setPriceRange("MEDIUM");
         r2.setEstablishmentType(EstablishmentType.RESTAURANT);
         r2.setOpen(true);
 
         Restaurant r2Domain = new Restaurant.Builder("Sakura Sushi")
-            .withCuisineType(DishType.JAPANESE)
-            .build();
-        addTimeSlots(r2Domain, "12:00", "14:30", 6);
-        addTimeSlots(r2Domain, "19:00", "22:30", 10);
+                .withCuisineType(DishType.JAPANESE)
+                .build();
+
+        System.out.println("   Adding TimeSlots...");
+        addTimeSlots(r2Domain, "14:00", "14:30", 6);
+        addTimeSlots(r2Domain, "15:00", "15:30", 10);
+
+        RestaurantDTO r2WithSlots = RestaurantMapper.toDTO(r2Domain);
+        r2.setTimeSlots(r2WithSlots.getTimeSlots());
+        System.out.println("   Restaurant 2 has " + r2.getTimeSlots().size() + " TimeSlots");
 
         List<DishDTO> r2Dishes = new ArrayList<>();
         r2Dishes.add(createDish("Miso Soup", "Traditional Japanese soup", 4.50, "STARTER", "JAPANESE",
-                Arrays.asList(new ToppingDTO("Extra Tofu", 1.00), new ToppingDTO("Seaweed", 0.50))));
+                Arrays.asList(new ToppingDTO("Extra Tofu", 1.00))));
         r2Dishes.add(createDish("California Roll", "Crab, avocado, cucumber", 13.00, "MAIN_COURSE", "JAPANESE",
-                Arrays.asList(new ToppingDTO("Extra Avocado", 2.00), new ToppingDTO("Spicy Mayo", 0.80), new ToppingDTO("Wasabi", 0.50))));
-        r2Dishes.add(createDish("Salmon Sashimi", "Fresh salmon slices", 16.00, "MAIN_COURSE", "JAPANESE",
-                Arrays.asList(new ToppingDTO("Soy Sauce", 0.00), new ToppingDTO("Extra Ginger", 0.50))));
+                Arrays.asList(new ToppingDTO("Extra Avocado", 2.00))));
 
         r2.setDishes(r2Dishes);
         r2.setOpeningHours(Arrays.asList(
-                new OpeningHoursDTO("TUESDAY", "12:00", "14:30"), new OpeningHoursDTO("TUESDAY", "19:00", "22:30"),
-                new OpeningHoursDTO("WEDNESDAY", "12:00", "14:30"), new OpeningHoursDTO("WEDNESDAY", "19:00", "22:30"),
-                new OpeningHoursDTO("THURSDAY", "12:00", "14:30"), new OpeningHoursDTO("THURSDAY", "19:00", "22:30"),
-                new OpeningHoursDTO("FRIDAY", "12:00", "14:30"), new OpeningHoursDTO("FRIDAY", "19:00", "23:00"),
-                new OpeningHoursDTO("SATURDAY", "12:00", "14:30"), new OpeningHoursDTO("SATURDAY", "19:00", "23:00")
+                new OpeningHoursDTO("TUESDAY", "12:00", "14:30"),
+                new OpeningHoursDTO("TUESDAY", "19:00", "22:30")
         ));
         restaurants.add(r2);
 
-        // ====================== RESTAURANT 3 ======================
+        // ====================== RESTAURANT 3 (FERMÉ - AUCUN TIMESLOT) ======================
+        System.out.println("\n🏪 Creating Restaurant 3: El Sombrero (CLOSED)");
         RestaurantDTO r3 = new RestaurantDTO();
-        r3.setId(counter.getAndIncrement());  // ID = 3
+        r3.setId(counter.getAndIncrement());
         r3.setName("El Sombrero");
         r3.setCuisineType(DishType.MEXICAN);
-        r3.setPriceRange("€");
+        r3.setPriceRange("LOW");
         r3.setEstablishmentType(EstablishmentType.FOOD_TRUCK);
         r3.setOpen(false);
 
-        // Restaurant fermé - AUCUN TIMESLOT
-        Restaurant r3Domain = new Restaurant.Builder("El Sombrero")
-            .withCuisineType(DishType.MEXICAN)
-            .build();
+        // PAS DE TIMESLOTS POUR UN RESTAURANT FERMÉ
+        r3.setTimeSlots(new ArrayList<>());
+        System.out.println("   Restaurant 3 is CLOSED - No TimeSlots");
 
         List<DishDTO> r3Dishes = new ArrayList<>();
         r3Dishes.add(createDish("Tacos Al Pastor", "Pork and pineapple", 9.00, "MAIN_COURSE", "MEXICAN",
-                Arrays.asList(new ToppingDTO("Extra Guacamole", 1.50), new ToppingDTO("Sour Cream", 0.80))));
-        r3Dishes.add(createDish("Nachos Supreme", "Cheese, jalapeños, salsa", 7.50, "STARTER", "MEXICAN",
-                Arrays.asList(new ToppingDTO("Extra Cheese", 1.00))));
+                Arrays.asList(new ToppingDTO("Extra Guacamole", 1.50))));
 
         r3.setDishes(r3Dishes);
         r3.setOpeningHours(new ArrayList<>());
@@ -127,15 +136,9 @@ public class RestaurantRepository {
         r4.setId(counter.getAndIncrement());  // ID = 4
         r4.setName("Bombay Spice");
         r4.setCuisineType(DishType.INDIAN);
-        r4.setPriceRange("€€€");
+        r4.setPriceRange("HIGH");
         r4.setEstablishmentType(EstablishmentType.RESTAURANT);
         r4.setOpen(true);
-
-        Restaurant r4Domain = new Restaurant.Builder("Bombay Spice")
-            .withCuisineType(DishType.INDIAN)
-            .build();
-        addTimeSlots(r4Domain, "12:00", "14:00", 4);
-        addTimeSlots(r4Domain, "18:00", "22:00", 7);
 
         List<DishDTO> r4Dishes = new ArrayList<>();
         r4Dishes.add(createDish("Vegetable Samosa", "Crispy pastry with spiced vegetables", 5.50, "STARTER", "INDIAN",
@@ -156,16 +159,11 @@ public class RestaurantRepository {
         // ====================== RESTAURANT 5 ======================
         RestaurantDTO r5 = new RestaurantDTO();
         r5.setId(counter.getAndIncrement());  // ID = 5
-        r5.setName("Le Pain Doré");
+        r5.setName("Le Pain Dore");
         r5.setCuisineType(DishType.FRENCH);
-        r5.setPriceRange("€€");
+        r5.setPriceRange("MEDIUM");
         r5.setEstablishmentType(EstablishmentType.RESTAURANT);
         r5.setOpen(true);
-
-        Restaurant r5Domain = new Restaurant.Builder("Le Pain Doré")
-            .withCuisineType(DishType.FRENCH)
-            .build();
-        addTimeSlots(r5Domain, "07:00", "14:00", 3);
 
         List<DishDTO> r5Dishes = new ArrayList<>();
         r5Dishes.add(createDish("Croissant", "Fresh buttery croissant", 2.20, "STARTER", "FRENCH",
@@ -185,15 +183,9 @@ public class RestaurantRepository {
         r6.setId(counter.getAndIncrement());  // ID = 6
         r6.setName("Elios Crous");
         r6.setCuisineType(DishType.AMERICAN);
-        r6.setPriceRange("€");
+        r6.setPriceRange("LOW");
         r6.setEstablishmentType(EstablishmentType.CROUS);
         r6.setOpen(true);
-
-        Restaurant r6Domain = new Restaurant.Builder("Elios Crous")
-            .withCuisineType(DishType.AMERICAN)
-            .build();
-        addTimeSlots(r6Domain, "11:30", "14:30", 20);
-        addTimeSlots(r6Domain, "18:00", "20:00", 15);
 
         List<DishDTO> r6Dishes = new ArrayList<>();
         r6Dishes.add(createDish("Cheeseburger", "Beef patty with cheese", 8.50, "MAIN_COURSE", "AMERICAN",
@@ -215,16 +207,11 @@ public class RestaurantRepository {
         // ====================== RESTAURANT 7 ======================
         RestaurantDTO r7 = new RestaurantDTO();
         r7.setId(counter.getAndIncrement());  // ID = 7
-        r7.setName("Green Leaf Café");
+        r7.setName("Green Leaf Cafe");
         r7.setCuisineType(DishType.VEGETARIAN);
-        r7.setPriceRange("€€");
+        r7.setPriceRange("MEDIUM");
         r7.setEstablishmentType(EstablishmentType.RESTAURANT);
         r7.setOpen(true);
-
-        Restaurant r7Domain = new Restaurant.Builder("Green Leaf Café")
-            .withCuisineType(DishType.VEGETARIAN)
-            .build();
-        addTimeSlots(r7Domain, "08:00", "16:00", 5);
 
         List<DishDTO> r7Dishes = new ArrayList<>();
         r7Dishes.add(createDish("Quinoa Salad", "Quinoa, kale, avocado, nuts", 9.50, "MAIN_COURSE", "VEGETARIAN",
@@ -244,15 +231,9 @@ public class RestaurantRepository {
         r8.setId(counter.getAndIncrement());  // ID = 8
         r8.setName("Dragon Wok");
         r8.setCuisineType(DishType.CHINESE);
-        r8.setPriceRange("€€");
+        r8.setPriceRange("MEDIUM");
         r8.setEstablishmentType(EstablishmentType.RESTAURANT);
         r8.setOpen(true);
-
-        Restaurant r8Domain = new Restaurant.Builder("Dragon Wok")
-            .withCuisineType(DishType.CHINESE)
-            .build();
-        addTimeSlots(r8Domain, "11:00", "15:00", 6);
-        addTimeSlots(r8Domain, "18:00", "22:00", 9);
 
         List<DishDTO> r8Dishes = new ArrayList<>();
         r8Dishes.add(createDish("Chicken Chow Mein", "Noodles with chicken and vegetables", 12.00, "MAIN_COURSE", "CHINESE",
@@ -274,14 +255,9 @@ public class RestaurantRepository {
         r9.setId(counter.getAndIncrement());  // ID = 9
         r9.setName("Mediterraneo");
         r9.setCuisineType(DishType.MEDITERRANEAN);
-        r9.setPriceRange("€€");
+        r9.setPriceRange("MEDIUM");
         r9.setEstablishmentType(EstablishmentType.RESTAURANT);
         r9.setOpen(true);
-
-        Restaurant r9Domain = new Restaurant.Builder("Mediterraneo")
-            .withCuisineType(DishType.MEDITERRANEAN)
-            .build();
-        addTimeSlots(r9Domain, "11:00", "15:00", 4);
 
         List<DishDTO> r9Dishes = new ArrayList<>();
         r9Dishes.add(createDish("Hummus Plate", "Chickpea dip with pita bread", 6.00, "STARTER", "MEDITERRANEAN",
@@ -302,14 +278,9 @@ public class RestaurantRepository {
         r10.setId(counter.getAndIncrement());  // ID = 10
         r10.setName("Burger Time");
         r10.setCuisineType(DishType.AMERICAN);
-        r10.setPriceRange("€");
+        r10.setPriceRange("LOW");
         r10.setEstablishmentType(EstablishmentType.FOOD_TRUCK);
         r10.setOpen(true);
-
-        Restaurant r10Domain = new Restaurant.Builder("Burger Time")
-            .withCuisineType(DishType.AMERICAN)
-            .build();
-        addTimeSlots(r10Domain, "11:00", "14:00", 8);
 
         List<DishDTO> r10Dishes = new ArrayList<>();
         r10Dishes.add(createDish("Classic Burger", "Beef patty, lettuce, tomato", 7.50, "MAIN_COURSE", "AMERICAN",
@@ -329,14 +300,9 @@ public class RestaurantRepository {
         r11.setId(counter.getAndIncrement());  // ID = 11
         r11.setName("Pasta Fresca");
         r11.setCuisineType(DishType.ITALIAN);
-        r11.setPriceRange("€€");
+        r11.setPriceRange("MEDIUM");
         r11.setEstablishmentType(EstablishmentType.RESTAURANT);
         r11.setOpen(true);
-
-        Restaurant r11Domain = new Restaurant.Builder("Pasta Fresca")
-            .withCuisineType(DishType.ITALIAN)
-            .build();
-        addTimeSlots(r11Domain, "12:00", "14:30", 5);
 
         List<DishDTO> r11Dishes = new ArrayList<>();
         r11Dishes.add(createDish("Lasagna", "Layered pasta with meat sauce", 13.50, "MAIN_COURSE", "ITALIAN",
@@ -355,14 +321,9 @@ public class RestaurantRepository {
         r12.setId(counter.getAndIncrement());  // ID = 12
         r12.setName("Curry Palace");
         r12.setCuisineType(DishType.INDIAN);
-        r12.setPriceRange("€€");
+        r12.setPriceRange("MEDIUM");
         r12.setEstablishmentType(EstablishmentType.RESTAURANT);
         r12.setOpen(true);
-
-        Restaurant r12Domain = new Restaurant.Builder("Curry Palace")
-            .withCuisineType(DishType.INDIAN)
-            .build();
-        addTimeSlots(r12Domain, "11:30", "14:30", 6);
 
         List<DishDTO> r12Dishes = new ArrayList<>();
         r12Dishes.add(createDish("Chicken Tikka Masala", "Spiced chicken in creamy tomato sauce", 14.50, "MAIN_COURSE", "INDIAN",
@@ -376,27 +337,37 @@ public class RestaurantRepository {
                 new OpeningHoursDTO("FRIDAY", "11:30", "14:30")
         ));
         restaurants.add(r12);
+
+                System.out.println("\n✅ Seed completed: " + restaurants.size() + " restaurants created");
+
+        // ✅ VÉRIFICATION FINALE
+        System.out.println("\n🔍 Final verification:");
+        for (RestaurantDTO r : restaurants) {
+            System.out.println("  - " + r.getName() + ": " +
+                    (r.getTimeSlots() != null ? r.getTimeSlots().size() : 0) + " TimeSlots");
+        }
     }
 
     /**
-     * ✅ Méthode helper pour ajouter des TimeSlots à un restaurant
-     * Génère des créneaux de 30 minutes entre startTime et endTime
+     *  Méthode helper pour ajouter des TimeSlots (génère créneaux de 30min)
      */
     private void addTimeSlots(Restaurant restaurant, String startTime, String endTime, int capacity) {
         LocalTime start = LocalTime.parse(startTime);
         LocalTime end = LocalTime.parse(endTime);
         LocalTime current = start;
-        
+
+        int slotsAdded = 0;
         while (current.plusMinutes(30).isBefore(end) || current.plusMinutes(30).equals(end)) {
             TimeSlot slot = new TimeSlot(current, current.plusMinutes(30));
             restaurant.setCapacity(slot, capacity);
+            slotsAdded++;
             current = current.plusMinutes(30);
         }
+
+        System.out.println("    ✅ Added " + slotsAdded + " slots from " + startTime + " to " + endTime +
+                " (capacity: " + capacity + ")");
     }
 
-    /**
-     * ✅ Méthode helper pour créer des DishDTO complets
-     */
     private DishDTO createDish(String name, String description, double price,
                                String category, String dishType, List<ToppingDTO> toppings) {
         DishDTO dish = new DishDTO();
@@ -411,36 +382,45 @@ public class RestaurantRepository {
     }
 
     public List<RestaurantDTO> findAll() {
-        System.out.println("📋 RestaurantRepository.findAll() returning " + restaurants.size() + " restaurants");
+        System.out.println("📋 RestaurantRepository.findAll() called");
+        System.out.println("  Returning " + restaurants.size() + " restaurants");
+
+        // Log TimeSlots pour chaque restaurant
+        for (RestaurantDTO r : restaurants) {
+            System.out.println("  - " + r.getName() + ": " +
+                    (r.getTimeSlots() != null ? r.getTimeSlots().size() : 0) + " TimeSlots");
+        }
+
         return restaurants;
     }
 
     public RestaurantDTO findById(long id) {
         System.out.println("🔍 RestaurantRepository.findById(" + id + ")");
+
         RestaurantDTO found = restaurants.stream()
                 .filter(r -> r.getId() == id)
                 .findFirst()
                 .orElse(null);
 
         if (found != null) {
-            System.out.println("✅ Found restaurant: " + found.getName() + " with " + found.getDishes().size() + " dishes");
+            System.out.println("✅ Found: " + found.getName());
+            System.out.println("  - Dishes: " + found.getDishes().size());
+            System.out.println("  - TimeSlots: " +
+                    (found.getTimeSlots() != null ? found.getTimeSlots().size() : 0));
+
+            if (found.getTimeSlots() != null && !found.getTimeSlots().isEmpty()) {
+                System.out.println("  📅 TimeSlots details:");
+                for (TimeSlotDTO slot : found.getTimeSlots()) {
+                    System.out.println("    - " + slot.getStartTime() + " to " +
+                            slot.getEndTime() + " (capacity: " + slot.getAvailableCapacity() + ")");
+                }
+            }
         } else {
             System.err.println("❌ Restaurant not found with ID: " + id);
-            System.out.println("Available IDs: " + restaurants.stream().map(RestaurantDTO::getId).toList());
+            System.out.println("Available IDs: " +
+                    restaurants.stream().map(RestaurantDTO::getId).toList());
         }
 
         return found;
-    }
-
-    /**
-     * ✅ NOUVELLE MÉTHODE : Récupérer les TimeSlots d'un restaurant
-     */
-    public List<TimeSlot> getTimeSlots(long restaurantId) {
-        RestaurantDTO dto = findById(restaurantId);
-        if (dto == null) return new ArrayList<>();
-        
-        // Convertir DTO -> Domain pour accéder aux TimeSlots
-        Restaurant domain = RestaurantMapper.fromDTO(dto);
-        return domain.getAvailableTimeSlots();
     }
 }

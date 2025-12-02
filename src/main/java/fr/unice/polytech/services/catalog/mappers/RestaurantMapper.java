@@ -22,7 +22,7 @@ public class RestaurantMapper {
         dto.setCuisineType(restaurant.getCuisineType() != null ?
                 restaurant.getCuisineType() : DishType.GENERAL);
 
-        // Dishes
+        // ========== Dishes ==========
         if (restaurant.getDishes() != null && !restaurant.getDishes().isEmpty()) {
             List<DishDTO> dishDTOs = restaurant.getDishes().stream()
                     .map(RestaurantMapper::dishToDTO)
@@ -32,7 +32,7 @@ public class RestaurantMapper {
             dto.setDishes(new ArrayList<>());
         }
 
-        // Opening Hours
+        // ========== Opening Hours ==========
         if (restaurant.getOpeningHours() != null && !restaurant.getOpeningHours().isEmpty()) {
             List<OpeningHoursDTO> hoursDTOs = restaurant.getOpeningHours().stream()
                     .map(RestaurantMapper::openingHoursToDTO)
@@ -41,25 +41,34 @@ public class RestaurantMapper {
         } else {
             dto.setOpeningHours(new ArrayList<>());
         }
-        
-        // ✅ NOUVEAU : TimeSlots avec capacités
+
+        // ========== ✅ TimeSlots avec capacités (LE FIX PRINCIPAL) ==========
         if (restaurant.getCapacityByTimeSlot() != null && !restaurant.getCapacityByTimeSlot().isEmpty()) {
+            System.out.println("🔍 RestaurantMapper: Converting " +
+                    restaurant.getCapacityByTimeSlot().size() + " TimeSlots for " + restaurant.getRestaurantName());
+
             List<TimeSlotDTO> timeSlotDTOs = restaurant.getCapacityByTimeSlot().entrySet().stream()
                     .map(entry -> {
                         TimeSlot slot = entry.getKey();
                         Integer capacity = entry.getValue();
-                        
+
                         TimeSlotDTO slotDTO = new TimeSlotDTO();
                         slotDTO.setStartTime(slot.getStartTime().toString());
                         slotDTO.setEndTime(slot.getEndTime().toString());
                         slotDTO.setAvailableCapacity(capacity);
                         slotDTO.setDayOfWeek(slot.getDayOfWeek() != null ? slot.getDayOfWeek().toString() : null);
-                        
+
+                        System.out.println("  📅 TimeSlot: " + slotDTO.getStartTime() +
+                                " - " + slotDTO.getEndTime() + " (capacity: " + capacity + ")");
+
                         return slotDTO;
                     })
                     .collect(Collectors.toList());
             dto.setTimeSlots(timeSlotDTOs);
+
+            System.out.println("✅ RestaurantMapper: " + timeSlotDTOs.size() + " TimeSlots converted");
         } else {
+            System.out.println("⚠️ RestaurantMapper: No TimeSlots found for " + restaurant.getRestaurantName());
             dto.setTimeSlots(new ArrayList<>());
         }
 
@@ -98,11 +107,13 @@ public class RestaurantMapper {
     public static Restaurant fromDTO(RestaurantDTO dto) {
         if (dto == null) return null;
 
+        System.out.println("🔄 RestaurantMapper.fromDTO: Converting " + dto.getName());
+
         Restaurant restaurant = new Restaurant.Builder(dto.getName())
                 .withCuisineType(dto.getCuisineType())
                 .build();
 
-        // Ajouter les plats
+        // ========== Ajouter les plats ==========
         if (dto.getDishes() != null && !dto.getDishes().isEmpty()) {
             dto.getDishes().forEach(dishDTO -> {
                 restaurant.addDish(
@@ -130,7 +141,7 @@ public class RestaurantMapper {
             });
         }
 
-        // Ajouter les horaires d'ouverture
+        // ========== Ajouter les horaires d'ouverture ==========
         if (dto.getOpeningHours() != null && !dto.getOpeningHours().isEmpty()) {
             dto.getOpeningHours().forEach(slotDTO -> {
                 try {
@@ -140,17 +151,23 @@ public class RestaurantMapper {
                 }
             });
         }
-        
-        // ✅ NOUVEAU : Ajouter les TimeSlots avec capacités
+
+        // ========== ✅ Ajouter les TimeSlots avec capacités ==========
         if (dto.getTimeSlots() != null && !dto.getTimeSlots().isEmpty()) {
+            System.out.println("🔄 RestaurantMapper.fromDTO: Processing " +
+                    dto.getTimeSlots().size() + " TimeSlots");
+
             dto.getTimeSlots().forEach(slotDTO -> {
                 try {
                     LocalTime start = LocalTime.parse(slotDTO.getStartTime());
                     LocalTime end = LocalTime.parse(slotDTO.getEndTime());
                     TimeSlot slot = new TimeSlot(start, end);
                     restaurant.setCapacity(slot, slotDTO.getAvailableCapacity());
+
+                    System.out.println("  📅 Added TimeSlot: " + slotDTO.getStartTime() +
+                            " - " + slotDTO.getEndTime() + " (capacity: " + slotDTO.getAvailableCapacity() + ")");
                 } catch (Exception e) {
-                    System.err.println("Invalid time slot: " + e.getMessage());
+                    System.err.println("❌ Invalid time slot: " + e.getMessage());
                 }
             });
         }

@@ -33,7 +33,7 @@ public class RestaurantDTO {
     @JsonProperty("openingHours")
     private List<OpeningHoursDTO> openingHours;
     
-    // ✅ NOUVEAU : Liste des TimeSlots avec capacités
+    // Liste des TimeSlots avec capacités
     @JsonProperty("timeSlots")
     private List<TimeSlotDTO> timeSlots;
 
@@ -89,7 +89,7 @@ public class RestaurantDTO {
         this.openingHours = openingHours != null ? openingHours : new ArrayList<>();
     }
     
-    // ✅ NOUVEAU : Getters/Setters pour TimeSlots
+    //  NOUVEAU : Getters/Setters pour TimeSlots
     public List<TimeSlotDTO> getTimeSlots() {
         return timeSlots != null ? timeSlots : new ArrayList<>();
     }

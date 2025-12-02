@@ -1,5 +1,10 @@
+// ============================================
+// index-restaurants.js 
+// Affichage des cartes sans liste de plats
+// ============================================
+
 let currentPage = 1;
-let currentLimit = 9;
+let currentLimit = 6;
 
 function escapeHtml(text) {
     const div = document.createElement('div');
@@ -40,6 +45,7 @@ async function loadRestaurants() {
     }
 }
 
+// ✅ NOUVELLE VERSION AMÉLIORÉE - Affiche uniquement les infos essentielles
 function displayRestaurants(restaurants) {
     const grid = document.getElementById('restaurants-grid');
 
@@ -50,28 +56,132 @@ function displayRestaurants(restaurants) {
 
     grid.innerHTML = restaurants.map(restaurant => {
         const dishes = restaurant.dishes || [];
-        const dishesHtml = dishes.slice(0, 4).map(dish => `
-            <div class="dish-item">
-                <span class="dish-name">${escapeHtml(dish.name)}</span>
-                <span class="dish-price">${dish.price}€</span>
-            </div>
-        `).join('');
-
         const cuisineType = restaurant.cuisineType || 'GENERAL';
         const cuisineBadgeClass = cuisineType.toLowerCase();
+        
+        // ✅ Déterminer si le restaurant est ouvert
+        const isOpen = restaurant.open !== false;
+        const statusBadge = isOpen 
+            ? '<span class="status-badge open">🟢 Open</span>' 
+            : '<span class="status-badge closed">🔴 Closed</span>';
+        
+        // ✅ Utiliser le priceRange du backend et mapper si nécessaire
+        let priceRange = '€'; // Valeur par défaut
+        
+        if (restaurant.priceRange && restaurant.priceRange !== '?') {
+            const priceRangeValue = restaurant.priceRange.toUpperCase().trim();
+            
+            // Mapper les différents formats vers les symboles
+            switch(priceRangeValue) {
+                case 'LOW':
+                case 'CHEAP':
+                case '€':
+                    priceRange = '€';
+                    break;
+                case 'MEDIUM':
+                case 'MODERATE':
+                case '€€':
+                    priceRange = '€€';
+                    break;
+                case 'HIGH':
+                case 'EXPENSIVE':
+                case '€€€':
+                    priceRange = '€€€';
+                    break;
+                default:
+                    // Si c'est déjà un symbole valide, l'utiliser
+                    if (['€', '€€', '€€€'].includes(restaurant.priceRange)) {
+                        priceRange = restaurant.priceRange;
+                    } else {
+                        // Fallback : calculer automatiquement
+                        const prices = dishes.map(d => d.price).filter(p => p > 0);
+                        const avgPrice = prices.length > 0 
+                            ? prices.reduce((a, b) => a + b, 0) / prices.length 
+                            : 0;
+                        
+                        if (avgPrice > 15) priceRange = '€€€';
+                        else if (avgPrice > 8) priceRange = '€€';
+                        else priceRange = '€';
+                    }
+            }
+        } else {
+            // Fallback : calculer basé sur les prix moyens des plats
+            const prices = dishes.map(d => d.price).filter(p => p > 0);
+            const avgPrice = prices.length > 0 
+                ? prices.reduce((a, b) => a + b, 0) / prices.length 
+                : 0;
+            
+            if (avgPrice > 15) priceRange = '€€€';
+            else if (avgPrice > 8) priceRange = '€€';
+            else priceRange = '€';
+        }
+        
+        // ✅ Analyser les types de plats disponibles
+        const hasVegetarian = dishes.some(d => 
+            (d.tags && d.tags.includes('VEGETARIAN')) || 
+            d.category === 'VEGETARIAN' ||
+            d.dishType === 'VEGETARIAN' ||
+            (d.name && d.name.toLowerCase().includes('vegetarian'))
+        );
+        
+        const hasVegan = dishes.some(d => 
+            (d.tags && d.tags.includes('VEGAN')) || 
+            d.category === 'VEGAN' ||
+            d.dishType === 'VEGAN' ||
+            (d.name && d.name.toLowerCase().includes('vegan'))
+        );
+        
+        const hasGlutenFree = dishes.some(d => 
+            (d.tags && d.tags.includes('GLUTEN_FREE')) ||
+            (d.name && d.name.toLowerCase().includes('gluten'))
+        );
+        
+        const hasOrganic = dishes.some(d => 
+            (d.tags && d.tags.includes('ORGANIC')) ||
+            (d.name && d.name.toLowerCase().includes('organic')) ||
+            (d.name && d.name.toLowerCase().includes('bio'))
+        );
+        
+        // ✅ Créer les badges de plats spéciaux
+        let specialDishBadges = '';
+        if (hasVegetarian) specialDishBadges += '<span class="special-badge vegetarian">🌱 Vegetarian</span>';
+        if (hasVegan) specialDishBadges += '<span class="special-badge vegan">🥗 Vegan</span>';
+        if (hasGlutenFree) specialDishBadges += '<span class="special-badge gluten-free">🌾 Gluten-Free</span>';
+        if (hasOrganic) specialDishBadges += '<span class="special-badge organic">🌿 Organic</span>';
 
         return `
             <div class="restaurant-card" onclick="goToRestaurantMenu(${restaurant.id})">
                 <div class="restaurant-header">
-                    <h3>${escapeHtml(restaurant.name)}</h3>
+                    <div class="header-top">
+                        <h3>${escapeHtml(restaurant.name)}</h3>
+                        ${statusBadge}
+                    </div>
                     <span class="cuisine-badge ${cuisineBadgeClass}">${escapeHtml(cuisineType)}</span>
                 </div>
+                
                 <div class="restaurant-info">
-                    <span class="dish-count">${dishes.length} dishes</span>
+                    <div class="info-row">
+                        <span class="info-item">
+                            <span class="icon">🍽️</span>
+                            <span class="text">${dishes.length} dishes</span>
+                        </span>
+                        <span class="info-item">
+                            <span class="icon">💰</span>
+                            <span class="text">${priceRange}</span>
+                        </span>
+                    </div>
+                    
+                    ${specialDishBadges ? `
+                        <div class="special-dishes">
+                            ${specialDishBadges}
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="dishes-preview">
-                    ${dishesHtml}
-                    ${dishes.length > 4 ? `<div class="more-dishes">+${dishes.length - 4} more</div>` : ''}
+                
+                <div class="restaurant-footer">
+                    <button class="view-menu-btn" onclick="event.stopPropagation(); goToRestaurantMenu(${restaurant.id});">
+                        View Menu →
+                    </button>
                 </div>
             </div>
         `;
@@ -127,6 +237,7 @@ window.goToRestaurantMenu = function(restaurantId) {
         return;
     }
 
+    console.log('🍽️ Navigation vers restaurant ID:', restaurantId);
     sessionStorage.setItem('selectedRestaurantId', restaurantId.toString());
     window.location.href = `/order.html`;
 }
@@ -149,6 +260,8 @@ function loadFiltersFromURL() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 index-restaurants.js chargé - Version améliorée sans listes de plats');
+    
     loadFiltersFromURL();
     loadRestaurants();
 

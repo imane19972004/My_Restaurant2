@@ -136,43 +136,75 @@ main {
 
 .restaurants-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
     margin-bottom: 40px;
 }
 
+/* ========================= RESTAURANT CARD - VERSION AMÉLIORÉE ========================= */
+
 .restaurant-card {
     background: white;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     cursor: pointer;
     transition: all 0.3s ease;
     border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .restaurant-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.2);
     border-color: #667eea;
 }
 
+/* ✅ RESTAURANT HEADER */
 .restaurant-header {
+    margin-bottom: 8px;
+}
+
+.header-top {
     display: flex;
     justify-content: space-between;
-    align-items: start;
+    align-items: center;
     margin-bottom: 12px;
     gap: 12px;
 }
 
 .restaurant-header h3 {
     margin: 0;
-    font-size: 22px;
+    font-size: 20px;
     color: #2c3e50;
     flex: 1;
     font-weight: 700;
+    line-height: 1.3;
 }
 
+/* ✅ STATUS BADGE */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.status-badge.open {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.closed {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* ✅ CUISINE BADGE */
 .cuisine-badge {
     background: #667eea;
     color: white;
@@ -183,6 +215,7 @@ main {
     text-transform: uppercase;
     white-space: nowrap;
     letter-spacing: 0.5px;
+    display: inline-block;
 }
 
 .cuisine-badge.italian { background: linear-gradient(135deg, #e74c3c, #c0392b); }
@@ -193,54 +226,107 @@ main {
 .cuisine-badge.american { background: linear-gradient(135deg, #3f51b5, #303f9f); }
 .cuisine-badge.vegetarian { background: linear-gradient(135deg, #4caf50, #388e3c); }
 .cuisine-badge.chinese { background: linear-gradient(135deg, #f44336, #d32f2f); }
+.cuisine-badge.mediterranean { background: linear-gradient(135deg, #2196f3, #1976d2); }
 
+/* ✅ RESTAURANT INFO */
 .restaurant-info {
-    color: #7f8c8d;
-    font-size: 14px;
-    margin-bottom: 16px;
-    font-weight: 500;
+    flex: 1;
 }
 
-.dish-count {
-    font-weight: 600;
-}
-
-.dishes-preview {
-    border-top: 2px solid #ecf0f1;
-    padding-top: 16px;
-}
-
-.dish-item {
+.info-row {
     display: flex;
     justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.info-item {
+    display: flex;
     align-items: center;
-    padding: 10px 0;
-    color: #34495e;
-    font-size: 15px;
+    gap: 6px;
+    font-size: 14px;
+    color: #5a6c7d;
 }
 
-.dish-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 500;
-}
-
-.dish-price {
-    font-weight: 700;
-    color: #667eea;
-    margin-left: 16px;
+.info-item .icon {
     font-size: 16px;
 }
 
-.more-dishes {
-    text-align: center;
-    padding: 12px;
-    color: #95a5a6;
-    font-style: italic;
-    font-size: 13px;
-    font-weight: 500;
+.info-item .text {
+    font-weight: 600;
+}
+
+/* ✅ SPECIAL DISHES BADGES - VERSION AMÉLIORÉE AVEC COULEURS */
+.special-dishes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.special-badge {
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+/* Badge Vegetarian - Vert clair */
+.special-badge.vegetarian {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+/* Badge Vegan - Vert foncé */
+.special-badge.vegan {
+    background: #f1f8e9;
+    color: #558b2f;
+    border-color: #dcedc8;
+}
+
+/* Badge Gluten-Free - Jaune/Or */
+.special-badge.gluten-free {
+    background: #fff8e1;
+    color: #f57f17;
+    border-color: #ffecb3;
+}
+
+/* Badge Organic - Vert menthe */
+.special-badge.organic {
+    background: #e0f2f1;
+    color: #00695c;
+    border-color: #b2dfdb;
+}
+
+/* ✅ VIEW MENU BUTTON */
+.restaurant-footer {
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.view-menu-btn {
+    width: 100%;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-menu-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.view-menu-btn:active {
+    transform: scale(0.98);
 }
 
 /* ========================= LOADING & STATES ========================= */
@@ -383,7 +469,12 @@ footer p {
     }
 
     .restaurant-header h3 {
-        font-size: 20px;
+        font-size: 18px;
+    }
+
+    .info-row {
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
     .pagination {
@@ -413,9 +504,20 @@ footer p {
     .section-header h2 {
         font-size: 24px;
     }
+
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
 
-/* ========================= NOUVELLES ANIMATIONS (POUR ORDER.HTML) ========================= */
+/* ========================= ANIMATIONS ========================= */
 
 @keyframes slideIn {
     from {
@@ -483,218 +585,4 @@ footer p {
     background: #ccc;
     cursor: not-allowed;
     transform: none;
-}
-
-/* ========================= SECTIONS DE COMMANDE (ORDER.HTML) ========================= */
-
-.category-section {
-    margin-bottom: 2rem;
-}
-
-.category-section h3 {
-    color: var(--secondary);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #eee;
-    font-size: 1.3rem;
-}
-
-/* ========================= CARTES DE PLATS ========================= */
-
-.dish {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.dish:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
-
-/* ========================= SECTION TOPPINGS ========================= */
-
-#toppings-section {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin: 1.5rem 0;
-    border-left: 4px solid var(--primary);
-}
-
-#toppings-section h3 {
-    color: var(--primary);
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
-}
-
-.topping-checkbox {
-    cursor: pointer;
-    accent-color: var(--primary);
-}
-
-/* ========================= PANIER ========================= */
-
-#cart {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: sticky;
-    top: 20px;
-}
-
-#cart h2 {
-    color: var(--primary);
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
-}
-
-#cart-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1rem 0;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-#cart-list:empty {
-    padding: 2rem;
-    text-align: center;
-    color: #999;
-}
-
-/* ========================= TOTAL ========================= */
-
-.cart-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: #f9f9f9;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.cart-total span:last-child {
-    color: var(--success);
-    font-size: 1.5rem;
-}
-
-/* ========================= SECTION LIVRAISON ========================= */
-
-#delivery {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    background: #f0f8ff;
-    border-radius: 8px;
-}
-
-#delivery h3 {
-    color: var(--primary);
-    margin-bottom: 0.75rem;
-    font-size: 1.1rem;
-}
-
-#delivery-slot {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    background: white;
-    cursor: pointer;
-}
-
-#delivery-slot:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-#delivery-slot:disabled {
-    background: #f5f5f5;
-    cursor: not-allowed;
-}
-
-/* ========================= MODAL DE PAIEMENT ========================= */
-
-#payment-modal {
-    animation: fadeIn 0.3s ease-out;
-}
-
-#payment-modal > div {
-    animation: pulse 0.3s ease-out;
-}
-
-/* ========================= PAGE DE CONFIRMATION ========================= */
-
-.success-message {
-    animation: fadeIn 0.5s ease-out;
-}
-
-.message-box {
-    animation: fadeIn 0.5s ease-out;
-}
-
-/* ========================= TOAST NOTIFICATIONS ========================= */
-
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #333;
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
-    animation: slideIn 0.3s ease-out;
-}
-
-/* ========================= SCROLLBAR PERSONNALISÉE ========================= */
-
-#cart-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-#cart-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-#cart-list::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 4px;
-}
-
-#cart-list::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary);
-}
-
-/* ========================= RESPONSIVE POUR ORDER.HTML ========================= */
-
-@media (max-width: 768px) {
-    #cart {
-        position: static;
-        margin-top: 2rem;
-    }
-
-    .dish {
-        padding: 1rem;
-    }
-
-    #toppings-section {
-        padding: 1rem;
-    }
-
-    #payment-modal > div {
-        width: 95% !important;
-        padding: 1.5rem !important;
-    }
 }

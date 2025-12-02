@@ -36,7 +36,7 @@ public class OrderServer {
         // Order endpoints
         server.createContext("/api/orders", new OrderHandler());
 
-        // ✅ TimeSlot endpoints - PLUS BESOIN DE PASSER RestaurantManager
+        // TimeSlot endpoints - PLUS BESOIN DE PASSER RestaurantManager
         server.createContext("/api/timeslots", new TimeSlotHandler());
 
         // Payment endpoints (proxy)

@@ -9,6 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
 
+/**
+ * ApiGateway - Main class to start the API Gateway server
+ */
+
 public class ApiGateway {
 
     private static final int PORT = 8080;
@@ -19,13 +23,20 @@ public class ApiGateway {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 
+        
+         // ✅ NOUVEAU : Route pour la spécification OpenAPI
+        server.createContext("/api-spec", new OpenApiHandler());
+
         server.createContext("/api", GatewayRouter::routeRequest);
         server.createContext("/", StaticFileHandler::handle);
+       
 
         server.start();
 
         LOGGER.info("🚪 API Gateway started on http://localhost:" + PORT);
         LOGGER.info("📂 Serving static files from: " + FRONTEND_DIR);
         LOGGER.info("📍 Routes handled by GatewayRouter.");
+        LOGGER.info("📖 API Documentation available at: http://localhost:" + PORT + "/api-docs.html");
+
     }
 }

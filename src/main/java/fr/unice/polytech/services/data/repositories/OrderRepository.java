@@ -12,12 +12,12 @@ public class OrderRepository {
     private final AtomicLong counter = new AtomicLong(1);
 
     public OrderDTO save(OrderDTO order) {
-        //  FIX 1 : Assigner un ID si manquant
+        //  : Assigner un ID si manquant
         if (order.getId() == null || order.getId() == 0) {
             order.setId(counter.getAndIncrement());
         }
 
-        //  FIX 2 : Définir le status par défaut
+        //   : Définir le status par défaut
         if (order.getStatus() == null || order.getStatus().isEmpty()) {
             order.setStatus("PENDING");
         }

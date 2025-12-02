@@ -1,0 +1,489 @@
+openapi: 3.0.3
+info:
+  title: SopiaTech Eats API
+  description: |
+    API Gateway pour le système de commande de repas universitaire.
+    
+    Cette API permet de :
+    - Consulter les restaurants et leurs menus
+    - Passer des commandes avec sélection de plats et toppings
+    - Gérer les créneaux de livraison
+    - Traiter les paiements (INTERNAL et EXTERNAL)
+    
+    ## Architecture
+    L'API Gateway (port 8080) route les requêtes vers :
+    - **Catalog Service** (port 8081) : Restaurants et plats
+    - **Order Service** (port 8082) : Commandes, créneaux, paiements
+    - **Data Service** (port 8090) : Persistence en mémoire
+    
+  version: 1.0.0
+  contact:
+    name: Team I-V
+    email: rajaa.tchani@etu.unice.fr
+
+servers:
+  - url: http://localhost:8080
+    description: API Gateway (Point d'entrée unique)
+  - url: http://localhost:8081
+    description: Catalog Service (Accès direct - non recommandé)
+  - url: http://localhost:8082
+    description: Order Service (Accès direct - non recommandé)
+
+tags:
+  - name: Restaurants
+    description: Consultation des restaurants et menus
+  - name: Dishes
+    description: Gestion des plats (ajout par restaurateurs)
+  - name: Orders
+    description: Création et suivi des commandes
+  - name: TimeSlots
+    description: Créneaux de livraison disponibles
+  - name: Payment
+    description: Traitement des paiements
+
+paths:
+  /api/restaurants:
+    get:
+      tags:
+        - Restaurants
+      summary: Liste des restaurants (paginée)
+      description: |
+        Récupère la liste des restaurants avec filtres optionnels.
+        Supporte la pagination pour optimiser les performances.
+      parameters:
+        - name: page
+          in: query
+          description: Numéro de page (commence à 1)
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Nombre de restaurants par page
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: cuisineType
+          in: query
+          description: Filtrer par type de cuisine
+          required: false
+          schema:
+            type: string
+            enum: [ITALIAN, JAPANESE, MEXICAN, INDIAN, FRENCH, AMERICAN, VEGETARIAN, CHINESE, MEDITERRANEAN]
+        - name: availableNow
+          in: query
+          description: Filtrer par disponibilité (restaurant ouvert maintenant)
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des restaurants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRestaurants'
+        '400':
+          description: Paramètres invalides
+
+  /api/restaurants/{id}:
+    get:
+      tags:
+        - Restaurants
+      summary: Détails d'un restaurant
+      description: Récupère les informations complètes d'un restaurant (plats, horaires, créneaux)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du restaurant
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Détails du restaurant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+        '404':
+          description: Restaurant non trouvé
+
+  /api/dishes:
+    post:
+      tags:
+        - Dishes
+      summary: Ajouter un plat (Restaurateur)
+      description: |
+        Permet à un restaurateur d'ajouter un nouveau plat à son menu.
+        Cette fonctionnalité démontre la possibilité d'ajout de plats (R4*).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishInput'
+      responses:
+        '201':
+          description: Plat créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '400':
+          description: Données invalides
+
+  /api/orders:
+    post:
+      tags:
+        - Orders
+      summary: Créer une commande
+      description: |
+        Crée une nouvelle commande avec les plats sélectionnés.
+        La commande est initialement en statut PENDING.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Commande créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Données de commande invalides
+
+  /api/orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Détails d'une commande
+      description: Récupère les informations d'une commande par son ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Détails de la commande
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Commande non trouvée
+
+  /api/timeslots:
+    get:
+      tags:
+        - TimeSlots
+      summary: Créneaux de livraison disponibles
+      description: |
+        Récupère les créneaux de livraison d'un restaurant.
+        Les créneaux sont définis par le restaurant avec des capacités limitées.
+        **Requirement TD:** "visualisant les heures de livraisons possibles qui évoluent en fonction de la commande"
+      parameters:
+        - name: restaurantId
+          in: query
+          required: true
+          description: ID du restaurant
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Liste des créneaux disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+        '400':
+          description: Restaurant ID manquant
+        '404':
+          description: Restaurant non trouvé
+
+  /api/payment:
+    post:
+      tags:
+        - Payment
+      summary: Traiter le paiement
+      description: |
+        Traite le paiement d'une commande.
+        Supporte deux méthodes :
+        - **INTERNAL** : Débit du compte étudiant
+        - **EXTERNAL** : Paiement par carte bancaire (simulé avec 3 tentatives)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '200':
+          description: Paiement accepté
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResult'
+        '402':
+          description: Paiement refusé
+        '400':
+          description: Données de paiement invalides
+
+components:
+  schemas:
+    PaginatedRestaurants:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Restaurant'
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalItems:
+          type: integer
+          example: 12
+        totalPages:
+          type: integer
+          example: 2
+        hasNextPage:
+          type: boolean
+          example: true
+        hasPreviousPage:
+          type: boolean
+          example: false
+
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "La Bella Vita"
+        cuisineType:
+          type: string
+          enum: [ITALIAN, JAPANESE, MEXICAN, INDIAN, FRENCH, AMERICAN, VEGETARIAN, CHINESE, MEDITERRANEAN]
+          example: "ITALIAN"
+        priceRange:
+          type: string
+          example: "€€"
+        open:
+          type: boolean
+          example: true
+        dishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dish'
+        openingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningHours'
+        timeSlots:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlot'
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Margherita Pizza"
+        description:
+          type: string
+          example: "Tomato sauce, mozzarella, basil"
+        price:
+          type: number
+          format: double
+          example: 12.50
+        category:
+          type: string
+          enum: [STARTER, MAIN_COURSE, DESSERT, DRINK, SIDE]
+          example: "MAIN_COURSE"
+        dishType:
+          type: string
+          example: "ITALIAN"
+        toppings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Topping'
+
+    Topping:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Extra Cheese"
+        price:
+          type: number
+          format: double
+          example: 1.50
+
+    OpeningHours:
+      type: object
+      properties:
+        day:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          example: "MONDAY"
+        openingTime:
+          type: string
+          format: time
+          example: "11:30"
+        closingTime:
+          type: string
+          format: time
+          example: "14:00"
+
+    TimeSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: time
+          example: "12:00"
+        endTime:
+          type: string
+          format: time
+          example: "12:30"
+        availableCapacity:
+          type: integer
+          example: 5
+          description: Nombre de commandes restantes pour ce créneau
+        dayOfWeek:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          example: "MONDAY"
+
+    DishInput:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+          example: "Tiramisu"
+        description:
+          type: string
+          example: "Classic Italian dessert"
+        price:
+          type: number
+          format: double
+          example: 6.00
+        category:
+          type: string
+          enum: [STARTER, MAIN_COURSE, DESSERT, DRINK, SIDE]
+          example: "DESSERT"
+        dishType:
+          type: string
+          example: "ITALIAN"
+
+    OrderInput:
+      type: object
+      required:
+        - restaurantId
+        - dishes
+        - deliveryLocation
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+          example: 1
+        dishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dish'
+        deliveryLocation:
+          type: string
+          example: "Campus Sophia"
+        timeSlot:
+          type: string
+          example: "12:00-12:30"
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        restaurantId:
+          type: integer
+          format: int64
+          example: 1
+        dishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dish'
+        totalAmount:
+          type: number
+          format: double
+          example: 27.50
+        status:
+          type: string
+          enum: [PENDING, VALIDATED, CANCELED]
+          example: "PENDING"
+        deliveryLocation:
+          type: string
+          example: "Campus Sophia"
+
+    PaymentInput:
+      type: object
+      required:
+        - orderId
+        - paymentMethod
+      properties:
+        orderId:
+          type: integer
+          format: int64
+          example: 1
+        paymentMethod:
+          type: string
+          enum: [INTERNAL, EXTERNAL]
+          example: "INTERNAL"
+
+    PaymentResult:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+          example: 1
+        status:
+          type: string
+          enum: [VALIDATED, CANCELED]
+          example: "VALIDATED"
+        message:
+          type: string
+          example: "Payment successful. Order validated."
+        paymentMethod:
+          type: string
+          example: "INTERNAL"

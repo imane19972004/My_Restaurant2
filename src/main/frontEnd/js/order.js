@@ -306,7 +306,7 @@ function displayDeliverySlots(slots) {
             <option value="${slot.startTime}-${slot.endTime}" 
                     ${slot.availableCapacity === 0 ? 'disabled' : ''}>
                 ${slot.startTime} - ${slot.endTime} 
-                ${slot.availableCapacity > 0 ? `(${slot.availableCapacity} places)` : '(Complet)'}
+                ${slot.availableCapacity > 0 ? `(${slot.availableCapacity} orders)` : '(Complet)'}
             </option>
         `).join('');
 
